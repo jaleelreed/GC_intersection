@@ -5,7 +5,7 @@
 | File | What it is |
 |---|---|
 | `00-launch-subset.sql` | Extracted from Platform Data Model v1.0 (validated 2026-07-15): header, extensions, ALL enums, domain 01 (platform core), `cost_codes` (pulled from domain 03), domain 07 (estimating — takeoff tables excluded), domain 09 + platform infrastructure (touch triggers, RLS DO block, indexes, UOM seed). 25 tables, FK-closed. |
-| `10-residential-intake.sql` | New domain 10 (GC_intersection front door): intake links/submissions, enrichment snapshots, scope hints, market seed, assembly modifiers, proposals/tokens/events, notifications — plus decision-ledger amendments to 01/07/09. 9 new tables. Runs after 00. |
+| `10-residential-intake.sql` | New domain 10 (GC_intersection front door): intake links/submissions, enrichment snapshots, scope hints, market seed, assembly modifiers, proposals/tokens/events, notifications — plus decision-ledger amendments to 01/07/09. 10 new tables. Runs after 00. |
 | `11-generation-and-delivery.sql` | New domain 11: scope→assembly wiring, counties reference, estimate generation trace (determinism as data), org markup templates + service areas, outbound email delivery. 6 new tables. Runs after 10. |
 | `99-platform-full-reference.sql` | The full 103-table Construction OS model, unmodified. **Reference only — never migrate.** Domains 02–06 and 08 are Construction OS scope (D11: deferred). |
 
