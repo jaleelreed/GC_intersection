@@ -1,0 +1,39 @@
+name: db-migrate
+
+# Migrates + seeds the real (Neon) database using the DATABASE_URL repository
+# secret — the connection string never exists as a file anywhere. Runs on
+# demand, and automatically when a migration lands on main.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["db/migrations/**"]
+
+concurrency:
+  group: db-migrate
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+    steps:
+      - name: require secret
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "::error::DATABASE_URL repository secret is not set (Settings → Secrets and variables → Actions)"
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: migrate
+        run: npm run db:migrate
+      - name: seed fixed test account
+        run: npm run db:seed
+      - name: verify (db smoke tests against the live database)
+        run: npx vitest run tests/db.smoke.test.ts
