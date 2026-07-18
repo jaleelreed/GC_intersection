@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: gc
+          POSTGRES_PASSWORD: gc
+          POSTGRES_DB: gc_intersection_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U gc"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://gc:gc@localhost:5432/gc_intersection_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: migrate + seed
+        run: |
+          npm run db:migrate
+          npm run db:seed
+      - name: reset is one command and idempotent (US-004)
+        run: npm run db:reset
+        env:
+          DB_RESET_ALLOW_PROD: "1"
+      - name: tests (health + db smoke)
+        run: npm test
+      - name: build
+        run: npm run build
+      - name: serve + assert 200 (US-004)
+        run: |
+          npm run start &
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/health || true)
+            if [ "$code" = "200" ]; then echo "health 200"; exit 0; fi
+            sleep 1
+          done
+          echo "server never answered 200"; exit 1
