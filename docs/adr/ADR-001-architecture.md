@@ -68,6 +68,8 @@ CLAUDE.md's read order and this session's premise ("schema dictates the stack") 
 
 **Action:** the operator drops `docs/schema/` into the repo before the EP-00 session (queue #2). Nothing else in this ADR is contingent on it.
 
+> **RESOLVED 2026-07-18 (`70b3f5c`):** full dictionary landed in `docs/schema/` — launch subset (00, 25 tables FK-closed), domain 10 (intake, incl. the `lineage_id` D8 fix and the D7 guard trigger), domain 11 (generation + delivery), and the 103-table reference (99). D8 launch-subset verification: see the lint findings in `docs/schema/README.md`. EP-00 is unblocked.
+
 ## 6. Open items (unchanged by this ADR)
 
 - **ADR-2** — enrichment launch vs. fast-follow. Stays open. US-005c builds the enrichment service behind an interface plus a fixture implementation regardless of the outcome, so no launch story blocks on it.
