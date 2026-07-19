@@ -662,3 +662,26 @@ legend {
 .gci-status-accepted { color: #15803d; }
 .gci-status-declined, .gci-status-withdrawn, .gci-status-expired { color: #b91c1c; }
 .gci-status-viewed { color: var(--gci-accent); }
+
+/* Public landing page */
+.gci-landing { max-width: 760px; margin: 0 auto; padding: 16px 20px 48px; }
+.gci-landing-nav { display: flex; justify-content: space-between; align-items: center; padding: 8px 0 24px; }
+.gci-landing-brand { font-size: 20px; font-weight: 800; }
+.gci-landing-signin { font-weight: 700; color: var(--gci-accent); text-decoration: none; }
+.gci-hero h1 { font-size: 40px; line-height: 1.1; margin: 16px 0 12px; }
+.gci-hero-sub { font-size: 18px; color: var(--gci-ink); max-width: 60ch; }
+.gci-hero-cta { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin: 20px 0 8px; }
+.gci-hero-cta .gci-primary {
+  display: inline-block; min-height: 52px; line-height: 52px; padding: 0 28px;
+  background: var(--gci-accent); color: #fff; border-radius: 10px; font-weight: 800;
+  font-size: 18px; text-decoration: none;
+}
+.gci-how, .gci-why { margin-top: 40px; }
+.gci-how ol { padding-left: 20px; }
+.gci-how li, .gci-why li { margin: 10px 0; font-size: 16px; }
+.gci-why ul { list-style: none; padding: 0; }
+.gci-why li { padding-left: 24px; position: relative; }
+.gci-why li::before { content: "✓"; position: absolute; left: 0; color: var(--gci-accent); font-weight: 800; }
+.gci-landing-foot { display: flex; gap: 10px; align-items: center; margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--gci-border); font-size: 14px; }
+.gci-landing-foot a { color: var(--gci-accent); text-decoration: none; }
+@media (max-width: 480px) { .gci-hero h1 { font-size: 30px; } }
