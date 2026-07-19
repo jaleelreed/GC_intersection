@@ -86,7 +86,11 @@ export async function sendProposal(
        VALUES ($1, $2, $3, now() + make_interval(days => $4))`,
       [p.org_id, proposalId, hashToken(rawToken), opts.expiresDays ?? 30]
     );
-    await client.query(`UPDATE proposals SET status = 'sent', sent_at = now() WHERE id = $1`, [proposalId]);
+    await client.query(
+      `UPDATE proposals SET status = 'sent', sent_at = now(),
+         expires_at = now() + make_interval(days => $2) WHERE id = $1`,
+      [proposalId, opts.expiresDays ?? 30]
+    );
     await client.query(
       `INSERT INTO proposal_events (org_id, proposal_id, event, actor_kind)
        VALUES ($1, $2, 'sent', 'gc_user')`,

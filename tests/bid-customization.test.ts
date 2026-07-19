@@ -15,6 +15,11 @@ d("bid customization", () => {
   afterAll(async () => {
     const pool = getPool();
     await pool.query(`
+      DELETE FROM proposal_events WHERE proposal_id IN (
+        SELECT p.id FROM proposals p JOIN estimate_versions v ON v.id = p.estimate_version_id
+        JOIN estimates e ON e.id = v.estimate_id JOIN intake_submissions s ON s.id = e.intake_submission_id
+        WHERE s.contact_email LIKE '%@bidcust-test.example')`);
+    await pool.query(`
       DELETE FROM proposal_access_tokens WHERE proposal_id IN (
         SELECT p.id FROM proposals p JOIN estimate_versions v ON v.id = p.estimate_version_id
         JOIN estimates e ON e.id = v.estimate_id JOIN intake_submissions s ON s.id = e.intake_submission_id
