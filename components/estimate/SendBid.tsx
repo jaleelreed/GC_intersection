@@ -16,6 +16,7 @@ export function SendBid({
   const [email, setEmail] = useState(defaultEmail);
   const [busy, setBusy] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
+  const [delivery, setDelivery] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -31,7 +32,10 @@ export function SendBid({
       });
       const data = await res.json();
       if (!res.ok) setError(data.error ?? "Could not send.");
-      else setUrl(data.buyerUrl);
+      else {
+        setUrl(data.buyerUrl);
+        setDelivery(data.delivery ?? "queued");
+      }
     } catch {
       setError("Network problem — try again.");
     } finally {
@@ -43,7 +47,11 @@ export function SendBid({
     return (
       <section className="gci-sendbox">
         <h2>Bid ready to share</h2>
-        <p className="gci-hint">Send this link to {email}. They can view and accept it.</p>
+        <p className="gci-hint">
+          {delivery === "sent"
+            ? `Emailed to ${email}. You can also copy the link below.`
+            : `Copy this link and send it to ${email}. They can view and accept it.`}
+        </p>
         <div className="gci-copyrow">
           <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
           <button
