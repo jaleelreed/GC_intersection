@@ -12,10 +12,12 @@ export default defineConfig({
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  // CI starts the server in the prior job step (it persists across steps), so
+  // reuse it; locally, start one on demand.
   webServer: {
     command: "npm run start",
     url: "http://localhost:3000",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true,
     timeout: 60_000,
   },
 });
