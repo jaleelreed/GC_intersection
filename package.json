@@ -12,7 +12,8 @@
     "db:reset": "node scripts/db/reset.mjs"
   },
   "dependencies": {
-    "next": "^15.3.0",
+    "@neondatabase/auth": "^0.4.2-beta",
+    "next": "^16.2.10",
     "pg": "^8.13.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
