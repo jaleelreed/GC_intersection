@@ -1,6 +1,6 @@
 // Gap 6: workspace settings — business identity (on the hosted form + bid),
 // service areas, and markup defaults that seed new drafts. Org-scoped.
-import { getPool } from "../db";
+import { getPool, orgQuery } from "../db";
 
 export async function setBusinessName(orgId: string, name: string): Promise<void> {
   const client = await getPool().connect();
@@ -29,7 +29,9 @@ export interface CountyOption {
 }
 
 export async function serviceAreaOptions(orgId: string): Promise<CountyOption[]> {
-  const r = await getPool().query(
+  // org_service_areas is FORCE RLS — scope the join.
+  const r = await orgQuery<CountyOption>(
+    orgId,
     `SELECT c.fips, c.name, c.state_code,
             (sa.id IS NOT NULL) AS active
      FROM counties c
@@ -43,13 +45,15 @@ export async function serviceAreaOptions(orgId: string): Promise<CountyOption[]>
 
 export async function toggleServiceArea(orgId: string, fips: string, add: boolean): Promise<void> {
   if (add) {
-    await getPool().query(
+    await orgQuery(
+      orgId,
       `INSERT INTO org_service_areas (org_id, county_fips) VALUES ($1, $2)
        ON CONFLICT (org_id, county_fips) DO UPDATE SET deleted_at = NULL`,
       [orgId, fips]
     );
   } else {
-    await getPool().query(
+    await orgQuery(
+      orgId,
       `UPDATE org_service_areas SET deleted_at = now() WHERE org_id = $1 AND county_fips = $2`,
       [orgId, fips]
     );

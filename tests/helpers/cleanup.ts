@@ -2,8 +2,32 @@
 // FK order (hints → notifications → submissions → ai_jobs → projects).
 // One place to extend as the conversion grows (estimates in US-011, etc.).
 import type { Pool } from "pg";
+import { withOrg } from "../../lib/db";
 
 export async function cleanupSubmissions(pool: Pool, emailPattern: string): Promise<void> {
+  // FORCE-RLS tables (notifications, lead_notes) must be deleted with the org
+  // GUC set. Discover the orgs these submissions belong to and scope per-org.
+  const orgIds = (
+    await pool.query(
+      `SELECT DISTINCT org_id FROM intake_submissions WHERE contact_email LIKE $1`,
+      [emailPattern]
+    )
+  ).rows.map((r) => r.org_id);
+  for (const orgId of orgIds) {
+    await withOrg(orgId, async (c) => {
+      await c.query(
+        `DELETE FROM notifications WHERE org_id = $1 AND subject_id IN (
+           SELECT id FROM intake_submissions WHERE contact_email LIKE $2)`,
+        [orgId, emailPattern]
+      );
+      await c.query(
+        `DELETE FROM lead_notes WHERE org_id = $1 AND intake_submission_id IN (
+           SELECT id FROM intake_submissions WHERE contact_email LIKE $2)`,
+        [orgId, emailPattern]
+      );
+    });
+  }
+
   const projectIds = (
     await pool.query(
       `SELECT project_id FROM intake_submissions
@@ -34,11 +58,6 @@ export async function cleanupSubmissions(pool: Pool, emailPattern: string): Prom
   );
   await pool.query(
     `DELETE FROM intake_scope_hints WHERE intake_submission_id IN (
-       SELECT id FROM intake_submissions WHERE contact_email LIKE $1)`,
-    [emailPattern]
-  );
-  await pool.query(
-    `DELETE FROM notifications WHERE subject_table = 'intake_submissions' AND subject_id IN (
        SELECT id FROM intake_submissions WHERE contact_email LIKE $1)`,
     [emailPattern]
   );

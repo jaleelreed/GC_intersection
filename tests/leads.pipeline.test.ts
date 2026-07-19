@@ -12,13 +12,9 @@ const USER = "00000000-0000-4000-8000-000000000002";
 
 d("lead pipeline", () => {
   afterAll(async () => {
-    const pool = getPool();
-    await pool.query(
-      `DELETE FROM lead_notes WHERE intake_submission_id IN (
-         SELECT id FROM intake_submissions WHERE contact_email LIKE '%@pipe-test.example')`
-    );
-    await cleanupSubmissions(pool, "%@pipe-test.example");
-    await pool.end();
+    // cleanupSubmissions removes lead_notes (FORCE RLS) with the org GUC set.
+    await cleanupSubmissions(getPool(), "%@pipe-test.example");
+    await getPool().end();
   });
 
   async function seed(email: string) {

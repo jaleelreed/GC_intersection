@@ -1,6 +1,6 @@
 // Gap 2: the lead pipeline. A lead is an intake submission viewed as sales
 // work — a stage, notes, follow-up. Org-scoped throughout.
-import { getPool } from "../db";
+import { getPool, orgQuery } from "../db";
 import { LEAD_STAGES, type LeadStage, type LeadRow, type LeadNote } from "./types";
 
 export { LEAD_STAGES };
@@ -48,7 +48,9 @@ export async function setStage(orgId: string, submissionId: string, stage: LeadS
 }
 
 export async function listNotes(orgId: string, submissionId: string): Promise<LeadNote[]> {
-  const r = await getPool().query(
+  // RLS-enforced (lead_notes is FORCE RLS) — must run scoped to the org.
+  const r = await orgQuery<LeadNote>(
+    orgId,
     `SELECT id, body, created_at FROM lead_notes
      WHERE org_id = $1 AND intake_submission_id = $2 AND deleted_at IS NULL
      ORDER BY created_at DESC`,
@@ -63,7 +65,8 @@ export async function addNote(
   authorUserId: string,
   body: string
 ): Promise<LeadNote> {
-  const r = await getPool().query(
+  const r = await orgQuery<LeadNote>(
+    orgId,
     `INSERT INTO lead_notes (org_id, intake_submission_id, author_user_id, body)
      VALUES ($1, $2, $3, $4) RETURNING id, body, created_at`,
     [orgId, submissionId, authorUserId, body]
