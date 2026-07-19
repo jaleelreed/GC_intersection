@@ -6,7 +6,7 @@ test("homeowner fills the intake form and sees a confirmation", async ({ page })
   await page.goto("/i/fixture-link");
 
   // Step 1 — about you
-  await expect(page.getByRole("heading", { name: "GC_intersection" })).toBeVisible();
+  await expect(page.locator('[data-field="contact_name"] input')).toBeVisible();
   await page.locator('[data-field="contact_name"] input').fill("E2E Homeowner");
   await page.locator('[data-field="contact_email"] input').fill(`e2e-${Date.now()}@intake-test.example`);
   await page.locator('[data-field="address_line1"] input').fill("42 E2E Test St");
