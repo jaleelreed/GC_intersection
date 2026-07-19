@@ -29,10 +29,18 @@ function assertTransition(from: string, to: string): void {
 
 const hashToken = (raw: string) => createHash("sha256").update(raw).digest("hex");
 
+export interface BidCustomization {
+  coverNote?: string;
+  inclusions?: string;
+  exclusions?: string;
+  terms?: string;
+}
+
 export async function createProposal(args: {
   estimateVersionId: string;
   recipientName: string;
   recipientEmail: string;
+  customization?: BidCustomization;
 }): Promise<{ proposalId: string }> {
   const v = (
     await getPool().query(
@@ -43,10 +51,14 @@ export async function createProposal(args: {
     )
   ).rows[0];
   if (!v) throw new Error("estimate version not found");
+  const c = args.customization ?? {};
+  const trim = (s?: string) => (s?.trim() ? s.trim().slice(0, 4000) : null);
   const r = await getPool().query(
-    `INSERT INTO proposals (org_id, project_id, estimate_version_id, status, recipient_name, recipient_email)
-     VALUES ($1, $2, $3, 'draft', $4, $5) RETURNING id`,
-    [v.org_id, v.project_id, v.id, args.recipientName, args.recipientEmail]
+    `INSERT INTO proposals (org_id, project_id, estimate_version_id, status, recipient_name, recipient_email,
+       cover_note, inclusions, exclusions, terms)
+     VALUES ($1, $2, $3, 'draft', $4, $5, $6, $7, $8, $9) RETURNING id`,
+    [v.org_id, v.project_id, v.id, args.recipientName, args.recipientEmail,
+     trim(c.coverNote), trim(c.inclusions), trim(c.exclusions), trim(c.terms)]
   );
   return { proposalId: r.rows[0].id };
 }
@@ -100,6 +112,11 @@ export interface BuyerProposalView {
   projectName: string;
   orgName: string;
   estimateVersionId: string;
+  coverNote: string | null;
+  inclusions: string | null;
+  exclusions: string | null;
+  terms: string | null;
+  expiresAt: string | null;
 }
 
 export interface BidLine {
@@ -134,7 +151,8 @@ export async function getProposalByToken(rawToken: string): Promise<BuyerProposa
       await client.query(
         `SELECT t.id AS token_id, t.proposal_id, t.org_id, p.status, p.recipient_name,
                 p.estimate_version_id, v.grand_total, v.range_low, v.range_high,
-                pr.name AS project_name, o.name AS org_name
+                pr.name AS project_name, o.name AS org_name,
+                p.cover_note, p.inclusions, p.exclusions, p.terms, p.expires_at
          FROM proposal_access_tokens t
          JOIN proposals p ON p.id = t.proposal_id AND p.deleted_at IS NULL
          JOIN estimate_versions v ON v.id = p.estimate_version_id
@@ -172,6 +190,11 @@ export async function getProposalByToken(rawToken: string): Promise<BuyerProposa
       projectName: t.project_name,
       orgName: t.org_name,
       estimateVersionId: t.estimate_version_id,
+      coverNote: t.cover_note,
+      inclusions: t.inclusions,
+      exclusions: t.exclusions,
+      terms: t.terms,
+      expiresAt: t.expires_at,
     };
   } catch (err) {
     await client.query("ROLLBACK");

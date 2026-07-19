@@ -14,6 +14,12 @@ export function SendBid({
 }) {
   const [name, setName] = useState(defaultName);
   const [email, setEmail] = useState(defaultEmail);
+  const [coverNote, setCoverNote] = useState("");
+  const [inclusions, setInclusions] = useState("");
+  const [exclusions, setExclusions] = useState("");
+  const [terms, setTerms] = useState("");
+  const [expiresDays, setExpiresDays] = useState("30");
+  const [showMore, setShowMore] = useState(false);
   const [busy, setBusy] = useState(false);
   const [url, setUrl] = useState<string | null>(null);
   const [delivery, setDelivery] = useState<string | null>(null);
@@ -28,7 +34,15 @@ export function SendBid({
       const res = await fetch(`/api/estimate/${versionId}/send`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ recipientName: name, recipientEmail: email }),
+        body: JSON.stringify({
+          recipientName: name,
+          recipientEmail: email,
+          coverNote,
+          inclusions,
+          exclusions,
+          terms,
+          expiresDays: Number(expiresDays) || 30,
+        }),
       });
       const data = await res.json();
       if (!res.ok) setError(data.error ?? "Could not send.");
@@ -85,6 +99,36 @@ export function SendBid({
         Recipient email
         <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
       </label>
+
+      <button type="button" className="gci-linkbtn" onClick={() => setShowMore(!showMore)}>
+        {showMore ? "Hide bid details" : "Add cover note, inclusions, terms…"}
+      </button>
+
+      {showMore && (
+        <div className="gci-bid-extra">
+          <label>
+            Cover note
+            <textarea rows={2} value={coverNote} onChange={(e) => setCoverNote(e.target.value)} placeholder="A short message to the homeowner" />
+          </label>
+          <label>
+            Included
+            <textarea rows={2} value={inclusions} onChange={(e) => setInclusions(e.target.value)} placeholder="What this price covers" />
+          </label>
+          <label>
+            Excluded
+            <textarea rows={2} value={exclusions} onChange={(e) => setExclusions(e.target.value)} placeholder="What it does not cover (permits, allowances, etc.)" />
+          </label>
+          <label>
+            Terms
+            <textarea rows={2} value={terms} onChange={(e) => setTerms(e.target.value)} placeholder="Payment terms, warranty, conditions" />
+          </label>
+          <label>
+            Expires in (days)
+            <input type="number" min={1} max={365} value={expiresDays} onChange={(e) => setExpiresDays(e.target.value)} />
+          </label>
+        </div>
+      )}
+
       <button type="submit" className="gci-primary" disabled={busy}>
         {busy ? "Preparing…" : "Create bid link"}
       </button>

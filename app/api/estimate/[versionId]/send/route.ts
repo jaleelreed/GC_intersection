@@ -29,7 +29,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ versionId: str
   ).rows[0];
   if (!owned) return Response.json({ error: "not found" }, { status: 404 });
 
-  let body: { recipientName?: string; recipientEmail?: string };
+  let body: {
+    recipientName?: string;
+    recipientEmail?: string;
+    coverNote?: string;
+    inclusions?: string;
+    exclusions?: string;
+    terms?: string;
+    expiresDays?: number;
+  };
   try {
     body = await req.json();
   } catch {
@@ -41,8 +49,15 @@ export async function POST(req: Request, ctx: { params: Promise<{ versionId: str
     estimateVersionId: versionId,
     recipientName: body.recipientName ?? "",
     recipientEmail: body.recipientEmail,
+    customization: {
+      coverNote: body.coverNote,
+      inclusions: body.inclusions,
+      exclusions: body.exclusions,
+      terms: body.terms,
+    },
   });
-  const { rawToken } = await sendProposal(proposalId);
+  const expiresDays = Number.isFinite(body.expiresDays) ? Math.min(365, Math.max(1, body.expiresDays!)) : 30;
+  const { rawToken } = await sendProposal(proposalId, { expiresDays });
 
   const origin = new URL(req.url).origin;
   const buyerUrl = `${origin}/p/${rawToken}`;

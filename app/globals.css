@@ -704,3 +704,11 @@ legend {
 .gci-history { margin-top: 24px; }
 .gci-vlist { list-style: none; padding: 0; }
 .gci-vlist li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gci-border); font-variant-numeric: tabular-nums; }
+
+/* Bid customization */
+.gci-bid-extra { border-top: 1px solid var(--gci-border); margin-top: 8px; padding-top: 8px; }
+.gci-bid-extra textarea { width: 100%; padding: 8px; border: 1px solid var(--gci-border); border-radius: 6px; font-size: 15px; }
+.gci-covernote { margin: 12px 0; padding: 12px; background: var(--gci-surface); border-radius: 8px; white-space: pre-wrap; }
+.gci-bid-terms { margin-top: 16px; }
+.gci-bid-terms h2 { font-size: 15px; margin: 12px 0 4px; }
+.gci-bid-terms p { margin: 0; white-space: pre-wrap; color: var(--gci-ink); }

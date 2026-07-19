@@ -26,6 +26,11 @@ export default async function BuyerProposalPage({ params }: { params: Promise<{ 
 
       <h1>Estimate for {view.projectName}</h1>
       {view.recipientName && <p className="gci-hint">Prepared for {view.recipientName}</p>}
+      {view.expiresAt && (
+        <p className="gci-hint">Valid until {new Date(view.expiresAt).toLocaleDateString()}</p>
+      )}
+
+      {view.coverNote && <p className="gci-covernote">{view.coverNote}</p>}
 
       {lines.length > 0 && (
         <table className="gci-bidlines">
@@ -43,6 +48,20 @@ export default async function BuyerProposalPage({ params }: { params: Promise<{ 
       <p className="gci-range">{money(view.grandTotal)}</p>
       {view.rangeLow != null && view.rangeHigh != null && (
         <p className="gci-hint">Estimated range {money(view.rangeLow)} – {money(view.rangeHigh)}</p>
+      )}
+
+      {(view.inclusions || view.exclusions || view.terms) && (
+        <div className="gci-bid-terms">
+          {view.inclusions && (
+            <div><h2>Included</h2><p>{view.inclusions}</p></div>
+          )}
+          {view.exclusions && (
+            <div><h2>Not included</h2><p>{view.exclusions}</p></div>
+          )}
+          {view.terms && (
+            <div><h2>Terms</h2><p>{view.terms}</p></div>
+          )}
+        </div>
       )}
 
       <div className="gci-accept-area">
