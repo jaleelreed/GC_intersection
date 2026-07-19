@@ -51,3 +51,7 @@ jobs:
             sleep 1
           done
           echo "server never answered 200"; exit 1
+      - name: e2e (Playwright, public flows)
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
