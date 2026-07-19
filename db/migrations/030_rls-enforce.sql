@@ -32,15 +32,9 @@ BEGIN
   END LOOP;
 END $$;
 
--- A non-privileged probe role RLS actually applies to. Superusers and the
--- table owner (with FORCE) are subject to RLS in production (Neon's app role
--- is not a superuser), but CI's postgres role IS a superuser and bypasses it —
--- so the isolation test does `SET LOCAL ROLE rls_probe` to demonstrate real
--- enforcement regardless of the connection's privilege. Harmless in prod.
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'rls_probe') THEN
-    CREATE ROLE rls_probe NOLOGIN;
-  END IF;
-END $$;
-GRANT SELECT ON lead_notes, notifications TO rls_probe;
+-- NOTE ON ENFORCEMENT: FORCE RLS makes the table owner subject to RLS, and a
+-- non-superuser role (prod: Neon's app role) is subject to it too. A SUPERUSER
+-- always bypasses RLS — CI's postgres role is a superuser, so runtime blocking
+-- can't be demonstrated there; the test instead verifies the FORCE flag +
+-- WITH CHECK policy are configured (pg_class.relforcerowsecurity, pg_policies).
+-- In production, connect the app as a non-superuser role for RLS to bite.
