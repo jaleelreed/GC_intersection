@@ -19,6 +19,19 @@ export async function cleanupSubmissions(pool: Pool, emailPattern: string): Prom
     )
   ).rows.map((r) => r.enrichment_snapshot_id);
 
+  const estimateIds = (
+    await pool.query(
+      `SELECT estimate_id FROM intake_submissions
+       WHERE contact_email LIKE $1 AND estimate_id IS NOT NULL`,
+      [emailPattern]
+    )
+  ).rows.map((r) => r.estimate_id);
+
+  await pool.query(
+    `DELETE FROM estimate_generation_runs WHERE intake_submission_id IN (
+       SELECT id FROM intake_submissions WHERE contact_email LIKE $1)`,
+    [emailPattern]
+  );
   await pool.query(
     `DELETE FROM intake_scope_hints WHERE intake_submission_id IN (
        SELECT id FROM intake_submissions WHERE contact_email LIKE $1)`,
@@ -32,6 +45,21 @@ export async function cleanupSubmissions(pool: Pool, emailPattern: string): Prom
   await pool.query(`DELETE FROM intake_submissions WHERE contact_email LIKE $1`, [emailPattern]);
   if (snapshotIds.length) {
     await pool.query(`DELETE FROM enrichment_snapshots WHERE id = ANY($1)`, [snapshotIds]);
+  }
+  if (estimateIds.length) {
+    await pool.query(
+      `DELETE FROM estimate_lines WHERE estimate_version_id IN (
+         SELECT id FROM estimate_versions WHERE estimate_id = ANY($1))`,
+      [estimateIds]
+    );
+    await pool.query(
+      `DELETE FROM estimate_markups WHERE estimate_version_id IN (
+         SELECT id FROM estimate_versions WHERE estimate_id = ANY($1))`,
+      [estimateIds]
+    );
+    await pool.query(`UPDATE estimates SET current_version_id = NULL WHERE id = ANY($1)`, [estimateIds]);
+    await pool.query(`DELETE FROM estimate_versions WHERE estimate_id = ANY($1)`, [estimateIds]);
+    await pool.query(`DELETE FROM estimates WHERE id = ANY($1)`, [estimateIds]);
   }
   if (projectIds.length) {
     await pool.query(`DELETE FROM ai_jobs WHERE project_id = ANY($1)`, [projectIds]);

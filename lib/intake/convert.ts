@@ -7,6 +7,12 @@ import { getPool } from "../db";
 import { SCOPE_TOGGLE_KEYS } from "./schema";
 import { notifyOrg } from "../notifications/repo";
 import { extractAndStoreHints } from "./hints";
+import { generateDraftEstimate } from "../estimate/generate";
+
+function fmtMoney(cents: string): string {
+  const n = Number(cents);
+  return `$${Math.round(n).toLocaleString("en-US")}`;
+}
 
 const TOGGLE_LABELS: Record<string, string> = {
   bath: "bath",
@@ -53,7 +59,8 @@ export async function convertSubmission(submissionId: string): Promise<string | 
     const sub = (
       await client.query(
         `SELECT id, org_id, status, project_id, channel, address_line1, address_line2,
-                city, state, postal_code, county_fips, square_footage, scope_toggles, narrative
+                city, state, postal_code, county_fips, square_footage, scope_toggles, narrative,
+                conditions, finish_tier
          FROM intake_submissions
          WHERE id = $1 AND deleted_at IS NULL
          FOR UPDATE`,
@@ -104,9 +111,13 @@ export async function convertSubmission(submissionId: string): Promise<string | 
       )
     ).rows[0];
 
+    // US-011: the priced draft — versioned concept estimate with a range and
+    // named swing drivers, traced in estimate_generation_runs.
+    const gen = await generateDraftEstimate(client, sub, project.id);
+
     await client.query(
-      `UPDATE intake_submissions SET status = 'converted', project_id = $2 WHERE id = $1`,
-      [submissionId, project.id]
+      `UPDATE intake_submissions SET status = 'converted', project_id = $2, estimate_id = $3 WHERE id = $1`,
+      [submissionId, project.id, gen.estimateId]
     );
 
     // US-005b: narrative → suggestions (ai_jobs + hints), same transaction.
@@ -121,12 +132,17 @@ export async function convertSubmission(submissionId: string): Promise<string | 
     // US-008: the GC finds out in-platform, same transaction as the
     // conversion — a converted lead without a notification cannot exist.
     // Body gains the range + swing drivers when US-011 attaches here.
+    const topDrivers = gen.swingDrivers.slice(0, 3).map((d) => d.driver).join(", ");
     await notifyOrg(client, sub.org_id, {
       kind: "intake_received",
       subject_table: "intake_submissions",
       subject_id: submissionId,
       title: `New lead: ${sub.address_line1}`,
-      body: `${name} · via ${sub.channel ?? "link"}` + (hintCount > 0 ? ` · ${hintCount} note${hintCount === 1 ? "" : "s"} from their description` : ""),
+      body:
+        `${fmtMoney(gen.rangeLowCents)} – ${fmtMoney(gen.rangeHighCents)} · drivers: ${topDrivers}` +
+        ` · via ${sub.channel ?? "link"}` +
+        (hintCount > 0 ? ` · ${hintCount} note${hintCount === 1 ? "" : "s"} from their description` : "") +
+        (gen.unpricedToggles.length > 0 ? ` · NOT PRICED: ${gen.unpricedToggles.join(", ")}` : ""),
     });
 
     await client.query("COMMIT");
