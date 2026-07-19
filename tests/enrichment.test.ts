@@ -27,15 +27,15 @@ describe("deriveCountyFips (pure)", () => {
 describe("FixtureEnrichmentProvider (pure)", () => {
   it("returns canned extract for a known address, deterministic", async () => {
     const p = new FixtureEnrichmentProvider();
-    const a = await p.enrich({ line1: "123 Fixture St NW" });
+    const a = await p.enrich({ line1: "123 Fixture St NW", city: "Washington", state: "DC", postal_code: "20001" });
     expect(a.provider).toBe("fixture");
     expect(a.extracted.year_built).toBe(1926);
-    expect(await p.enrich({ line1: "123 Fixture St NW" })).toEqual(a);
+    expect(await p.enrich({ line1: "123 Fixture St NW", city: "Washington", state: "DC", postal_code: "20001" })).toEqual(a);
   });
 
   it("returns an EMPTY extract for unknown addresses — the normal state", async () => {
     const p = new FixtureEnrichmentProvider();
-    const r = await p.enrich({ line1: "1 Nowhere Ln" });
+    const r = await p.enrich({ line1: "1 Nowhere Ln", city: "New York", state: "NY", postal_code: "10001" });
     expect(r.extracted).toEqual({});
   });
 });

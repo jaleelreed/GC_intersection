@@ -47,7 +47,12 @@ const FIXTURES: Record<string, EnrichmentExtract> = {
 export class FixtureEnrichmentProvider implements EnrichmentProvider {
   readonly name = "fixture";
 
-  async enrich(address: { line1: string }): Promise<EnrichmentResult> {
+  async enrich(address: {
+    line1: string;
+    city: string;
+    state: string;
+    postal_code: string;
+  }): Promise<EnrichmentResult> {
     const key = address.line1.trim().toLowerCase();
     const extracted = FIXTURES[key] ?? {};
     return { provider: this.name, raw_payload: { matched: key in FIXTURES }, extracted };
