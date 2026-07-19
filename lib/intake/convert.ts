@@ -8,6 +8,7 @@ import { SCOPE_TOGGLE_KEYS } from "./schema";
 import { notifyOrg } from "../notifications/repo";
 import { extractAndStoreHints } from "./hints";
 import { generateDraftEstimate } from "../estimate/generate";
+import { audit } from "../audit/repo";
 
 function fmtMoney(cents: string): string {
   const n = Number(cents);
@@ -122,6 +123,10 @@ export async function convertSubmission(submissionId: string): Promise<string | 
     await client.query(
       `UPDATE intake_submissions SET status = 'converted', project_id = $2, estimate_id = $3 WHERE id = $1`,
       [submissionId, project.id, gen.estimateId]
+    );
+    await audit(
+      { orgId: sub.org_id, projectId: project.id, table: "intake_submissions", rowId: submissionId, action: "converted" },
+      client
     );
 
     // US-005b: narrative → suggestions (ai_jobs + hints), same transaction.

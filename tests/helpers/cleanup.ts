@@ -102,6 +102,7 @@ export async function cleanupSubmissions(pool: Pool, emailPattern: string): Prom
     [emailPattern]
   );
   if (projectIds.length) {
+    await pool.query(`DELETE FROM audit_log WHERE project_id = ANY($1)`, [projectIds]);
     // Convergence chain (US-019/020): harvested cost_items reference
     // observations, which reference projects.
     await pool.query(

@@ -4,6 +4,7 @@
 // layer (US-025). D6: no payment objects exist, by design.
 import { createHash, randomBytes } from "node:crypto";
 import { getPool, setOrg } from "../db";
+import { audit } from "../audit/repo";
 
 // US-018/US-026: the machine. Decline is now DEFINED (Gap 7): a buyer may
 // decline a proposal they have received (sent) or viewed; declining records
@@ -96,6 +97,7 @@ export async function sendProposal(
        VALUES ($1, $2, 'sent', 'gc_user')`,
       [p.org_id, proposalId]
     );
+    await audit({ orgId: p.org_id, table: "proposals", rowId: proposalId, action: "sent" }, client);
     await client.query("COMMIT");
     return { rawToken };
   } catch (err) {
@@ -265,6 +267,7 @@ export async function acceptProposal(rawToken: string): Promise<AcceptResult | n
        VALUES ($1, $2, 'accepted', 'buyer_token', $3)`,
       [t.org_id, t.proposal_id, t.token_id]
     );
+    await audit({ orgId: t.org_id, table: "proposals", rowId: t.proposal_id, action: "accepted" }, client);
     await client.query("COMMIT");
     return { accepted: true, ...info };
   } catch (err) {
@@ -379,6 +382,7 @@ export async function declineProposal(
          AND m.role IN ('owner_admin','project_manager')`,
       [t.org_id, t.proposal_id, reason ? `Reason: ${reason}` : "No reason given"]
     );
+    await audit({ orgId: t.org_id, table: "proposals", rowId: t.proposal_id, action: "declined" }, client);
     await client.query("COMMIT");
     return { declined: true };
   } catch (err) {
