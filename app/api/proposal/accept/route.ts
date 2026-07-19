@@ -2,11 +2,15 @@
 // non-goal). Acceptance is a state change only (D6) and freezes the version
 // (D7); both happen inside acceptProposal.
 import { acceptProposal } from "../../../../lib/proposals/repo";
+import { rateGuard } from "../../../../lib/ratelimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const limited = await rateGuard(req, "accept", 30, 60);
+  if (limited) return limited;
+
   let body: { token?: string };
   try {
     body = await req.json();

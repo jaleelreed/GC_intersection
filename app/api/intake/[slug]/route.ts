@@ -3,6 +3,8 @@
 import { intakeSubmissionSchema, isSpam } from "../../../../lib/intake/schema";
 import { findActiveLink, insertSubmission } from "../../../../lib/intake/repo";
 import { convertSubmission } from "../../../../lib/intake/convert";
+import { rateGuard } from "../../../../lib/ratelimit";
+import { captureError } from "../../../../lib/monitor";
 import { deriveCountyFips } from "../../../../lib/enrichment/county";
 import { FixtureEnrichmentProvider } from "../../../../lib/enrichment/provider";
 import { storeSnapshot } from "../../../../lib/enrichment/repo";
@@ -16,6 +18,9 @@ export async function POST(
   req: Request,
   ctx: { params: Promise<{ slug: string }> }
 ) {
+  const limited = await rateGuard(req, "intake", 20, 60);
+  if (limited) return limited;
+
   const { slug } = await ctx.params;
 
   let body: unknown;
@@ -79,7 +84,7 @@ export async function POST(
     try {
       await convertSubmission(id);
     } catch (err) {
-      console.error("intake conversion failed", { submission_id: id, err });
+      await captureError(err, { where: "intake.convert", submission_id: id });
     }
   }
 
