@@ -4,6 +4,7 @@ import { POST } from "../app/api/intake/[slug]/route";
 import { buildProjectName, convertSubmission } from "../lib/intake/convert";
 import { getPool } from "../lib/db";
 import { validPayload } from "./intake.schema.test";
+import { cleanupSubmissions } from "./helpers/cleanup";
 
 const d = describe.skipIf(!process.env.DATABASE_URL);
 
@@ -34,12 +35,8 @@ describe("buildProjectName (pure)", () => {
 
 d("US-007 auto-create", () => {
   afterAll(async () => {
-    const pool = getPool();
-    await pool.query(
-      `DELETE FROM intake_submissions WHERE contact_email LIKE '%@convert-test.example'`
-    );
-    await pool.query(`DELETE FROM projects WHERE address_line1 LIKE '%Convert Test%'`);
-    await pool.end();
+    await cleanupSubmissions(getPool(), "%@convert-test.example");
+    await getPool().end();
   });
 
   async function submit(email: string, extra: Record<string, unknown> = {}) {

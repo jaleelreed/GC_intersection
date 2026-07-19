@@ -6,6 +6,7 @@ import type { PoolClient } from "pg";
 import { getPool } from "../db";
 import { SCOPE_TOGGLE_KEYS } from "./schema";
 import { notifyOrg } from "../notifications/repo";
+import { extractAndStoreHints } from "./hints";
 
 const TOGGLE_LABELS: Record<string, string> = {
   bath: "bath",
@@ -52,7 +53,7 @@ export async function convertSubmission(submissionId: string): Promise<string | 
     const sub = (
       await client.query(
         `SELECT id, org_id, status, project_id, channel, address_line1, address_line2,
-                city, state, postal_code, county_fips, square_footage, scope_toggles
+                city, state, postal_code, county_fips, square_footage, scope_toggles, narrative
          FROM intake_submissions
          WHERE id = $1 AND deleted_at IS NULL
          FOR UPDATE`,
@@ -108,6 +109,15 @@ export async function convertSubmission(submissionId: string): Promise<string | 
       [submissionId, project.id]
     );
 
+    // US-005b: narrative → suggestions (ai_jobs + hints), same transaction.
+    // Hints never touch pricing — they exist only for the GC to read.
+    const hintCount = await extractAndStoreHints(client, {
+      orgId: sub.org_id,
+      projectId: project.id,
+      submissionId,
+      narrative: sub.narrative,
+    });
+
     // US-008: the GC finds out in-platform, same transaction as the
     // conversion — a converted lead without a notification cannot exist.
     // Body gains the range + swing drivers when US-011 attaches here.
@@ -116,7 +126,7 @@ export async function convertSubmission(submissionId: string): Promise<string | 
       subject_table: "intake_submissions",
       subject_id: submissionId,
       title: `New lead: ${sub.address_line1}`,
-      body: `${name} · via ${sub.channel ?? "link"}`,
+      body: `${name} · via ${sub.channel ?? "link"}` + (hintCount > 0 ? ` · ${hintCount} note${hintCount === 1 ? "" : "s"} from their description` : ""),
     });
 
     await client.query("COMMIT");

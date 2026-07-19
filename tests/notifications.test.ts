@@ -4,6 +4,7 @@ import { POST } from "../app/api/intake/[slug]/route";
 import { inbox, markRead } from "../lib/notifications/repo";
 import { getPool } from "../lib/db";
 import { validPayload } from "./intake.schema.test";
+import { cleanupSubmissions } from "./helpers/cleanup";
 
 const d = describe.skipIf(!process.env.DATABASE_URL);
 
@@ -21,22 +22,8 @@ const params = (slug: string) => ({ params: Promise.resolve({ slug }) });
 
 d("US-008 in-platform notification", () => {
   afterAll(async () => {
-    const pool = getPool();
-    await pool.query(
-      `DELETE FROM notifications WHERE subject_id IN (
-         SELECT id FROM intake_submissions WHERE contact_email LIKE '%@notify-test.example')`
-    );
-    const ids = (
-      await pool.query(
-        `SELECT project_id FROM intake_submissions
-         WHERE contact_email LIKE '%@notify-test.example' AND project_id IS NOT NULL`
-      )
-    ).rows.map((r) => r.project_id);
-    await pool.query(
-      "DELETE FROM intake_submissions WHERE contact_email LIKE '%@notify-test.example'"
-    );
-    if (ids.length) await pool.query("DELETE FROM projects WHERE id = ANY($1)", [ids]);
-    await pool.end();
+    await cleanupSubmissions(getPool(), "%@notify-test.example");
+    await getPool().end();
   });
 
   it("conversion fans out to owner_admin with title, channel body, unread", async () => {

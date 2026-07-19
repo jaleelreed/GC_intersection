@@ -4,6 +4,7 @@ import { afterAll, describe, expect, it } from "vitest";
 import { POST } from "../app/api/intake/[slug]/route";
 import { getPool } from "../lib/db";
 import { validPayload } from "./intake.schema.test";
+import { cleanupSubmissions } from "./helpers/cleanup";
 
 const d = describe.skipIf(!process.env.DATABASE_URL);
 
@@ -19,20 +20,8 @@ const params = (slug: string) => ({ params: Promise.resolve({ slug }) });
 
 d("POST /api/intake/[slug]", () => {
   afterAll(async () => {
-    // Conversion (US-007) may have created projects; submissions point at
-    // them, so capture ids, delete submissions, then the projects.
-    const pool = getPool();
-    const ids = (
-      await pool.query(
-        `SELECT project_id FROM intake_submissions
-         WHERE contact_email LIKE '%@intake-test.example' AND project_id IS NOT NULL`
-      )
-    ).rows.map((r) => r.project_id);
-    await pool.query(
-      "DELETE FROM intake_submissions WHERE contact_email LIKE '%@intake-test.example'"
-    );
-    if (ids.length) await pool.query("DELETE FROM projects WHERE id = ANY($1)", [ids]);
-    await pool.end();
+    await cleanupSubmissions(getPool(), "%@intake-test.example");
+    await getPool().end();
   });
 
   it("writes a submission with channel and org snapshotted from the link", async () => {
