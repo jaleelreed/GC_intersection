@@ -718,3 +718,13 @@ legend {
 .gci-line-actions { white-space: nowrap; }
 .gci-line-actions .gci-linkbtn { padding: 4px 4px; }
 .gci-alternates { margin-top: 20px; padding-top: 8px; border-top: 1px dashed var(--gci-border); }
+
+/* Intake photos */
+.gci-photo-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.gci-photo-thumb, .gci-photo-grid a { position: relative; display: inline-block; }
+.gci-photo-grid img { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; border: 1px solid var(--gci-border); }
+.gci-photo-thumb button {
+  position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%;
+  border: none; background: #b91c1c; color: #fff; cursor: pointer; font-weight: 700; line-height: 1;
+}
+.gci-lead-photos { margin-top: 20px; }

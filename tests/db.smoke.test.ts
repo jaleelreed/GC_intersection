@@ -32,6 +32,7 @@ d("database (migrated + seeded)", () => {
       "030_rls-enforce.sql",
       "040_rate-limits.sql",
       "050_bid-customization.sql",
+      "060_intake-photos.sql",
       "090_reapply-platform-blocks.sql",
     ]);
   });

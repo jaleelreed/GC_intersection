@@ -4,6 +4,7 @@
 // All steps render in the DOM (hidden when inactive) so the contract is
 // visible to static analysis and the parity test.
 import { useEffect, useMemo, useRef, useState } from "react";
+import { PhotoUpload, type Photo } from "./PhotoUpload";
 
 export const SCOPE_TOGGLES: { key: string; label: string }[] = [
   { key: "bath", label: "Bathroom" },
@@ -66,6 +67,7 @@ export function IntakeForm({ slug, variant }: { slug: string; variant: "link" | 
   const [structural, setStructural] = useState<Record<string, boolean>>({});
   const [tier, setTier] = useState("");
   const [narrative, setNarrative] = useState("");
+  const [photos, setPhotos] = useState<Photo[]>([]);
 
   // Embed skin reports its height to the host page (public/embed.js).
   useEffect(() => {
@@ -103,6 +105,7 @@ export function IntakeForm({ slug, variant }: { slug: string; variant: "link" | 
       ),
       finish_tier: tier || null,
       narrative: narrative.trim() || null,
+      photos: photos.map((p) => ({ content_type: p.content_type, data_base64: p.data_base64 })),
       form_started_at: startedAt.current,
     };
   }, [contact, address, sqft, existing, target, conditions, problems, toggles, structural, tier, narrative]);
@@ -366,6 +369,7 @@ export function IntakeForm({ slug, variant }: { slug: string; variant: "link" | 
           Describe what you&rsquo;re hoping to do <span className="gci-opt">(optional)</span>
           <textarea rows={6} maxLength={2000} value={narrative} onChange={(e) => setNarrative(e.target.value)} />
         </label>
+        <PhotoUpload photos={photos} setPhotos={setPhotos} />
       </section>
 
       <div className="gci-nav">

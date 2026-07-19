@@ -52,6 +52,11 @@ export async function cleanupSubmissions(pool: Pool, emailPattern: string): Prom
   ).rows.map((r) => r.estimate_id);
 
   await pool.query(
+    `DELETE FROM intake_photos WHERE intake_submission_id IN (
+       SELECT id FROM intake_submissions WHERE contact_email LIKE $1)`,
+    [emailPattern]
+  );
+  await pool.query(
     `DELETE FROM estimate_generation_runs WHERE intake_submission_id IN (
        SELECT id FROM intake_submissions WHERE contact_email LIKE $1)`,
     [emailPattern]

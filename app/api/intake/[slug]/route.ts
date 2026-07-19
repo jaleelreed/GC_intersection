@@ -5,6 +5,7 @@ import { findActiveLink, insertSubmission } from "../../../../lib/intake/repo";
 import { convertSubmission } from "../../../../lib/intake/convert";
 import { rateGuard } from "../../../../lib/ratelimit";
 import { captureError } from "../../../../lib/monitor";
+import { storePhotos } from "../../../../lib/intake/photos";
 import { deriveCountyFips } from "../../../../lib/enrichment/county";
 import { FixtureEnrichmentProvider } from "../../../../lib/enrichment/provider";
 import { storeSnapshot } from "../../../../lib/enrichment/repo";
@@ -76,6 +77,15 @@ export async function POST(
     county_fips,
     enrichment_snapshot_id,
   });
+
+  // Photos (optional; best-effort — never block a lead).
+  if (parsed.data.photos.length > 0) {
+    try {
+      await storePhotos(link.org_id, id, parsed.data.photos);
+    } catch (err) {
+      await captureError(err, { where: "intake.photos", submission_id: id });
+    }
+  }
 
   // US-007: conversion runs after the submission is safely stored. A failure
   // here leaves the submission 'submitted' (retryable) — the homeowner still

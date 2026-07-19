@@ -9,6 +9,7 @@ import { LeadNotes } from "../../../../components/leads/LeadNotes";
 import { listNotes, type LeadStage } from "../../../../lib/leads/repo";
 import { listVersions, coverageGaps } from "../../../../lib/estimate/read";
 import { VersionHistory } from "../../../../components/estimate/VersionHistory";
+import { listPhotoIds } from "../../../../lib/intake/photos";
 
 export const dynamic = "force-dynamic";
 
@@ -50,6 +51,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
   const notes = await listNotes(ws.orgId, id);
   const versions = sub.estimate_id ? await listVersions(sub.estimate_id, ws.orgId) : [];
   const gaps = await coverageGaps(id, ws.orgId);
+  const photoIds = await listPhotoIds(ws.orgId, id);
 
   return (
     <main className="gci-page">
@@ -133,6 +135,20 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
               </li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {photoIds.length > 0 && (
+        <section className="gci-lead-photos">
+          <h2>Photos from the homeowner</h2>
+          <div className="gci-photo-grid">
+            {photoIds.map((pid) => (
+              <a key={pid} href={`/api/intake-photo/${pid}`} target="_blank" rel="noreferrer">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`/api/intake-photo/${pid}`} alt="homeowner photo" />
+              </a>
+            ))}
+          </div>
         </section>
       )}
 
