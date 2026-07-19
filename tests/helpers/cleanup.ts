@@ -68,6 +68,15 @@ export async function cleanupSubmissions(pool: Pool, emailPattern: string): Prom
   if (snapshotIds.length) {
     await pool.query(`DELETE FROM enrichment_snapshots WHERE id = ANY($1)`, [snapshotIds]);
   }
+  await pool.query(
+    `DELETE FROM outbound_messages WHERE subject_id IN (
+       SELECT p.id FROM proposals p
+       JOIN estimate_versions v ON v.id = p.estimate_version_id
+       JOIN estimates e ON e.id = v.estimate_id
+       JOIN intake_submissions s ON s.id = e.intake_submission_id
+       WHERE s.contact_email LIKE $1)`,
+    [emailPattern]
+  );
   if (projectIds.length) {
     // Convergence chain (US-019/020): harvested cost_items reference
     // observations, which reference projects.

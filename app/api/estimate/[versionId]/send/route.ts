@@ -5,6 +5,7 @@ import { currentUserEmail } from "../../../../../lib/auth/server";
 import { resolveWorkspace } from "../../../../../lib/workspace";
 import { getPool } from "../../../../../lib/db";
 import { createProposal, sendProposal } from "../../../../../lib/proposals/repo";
+import { sendOutbound, proposalEmailHtml } from "../../../../../lib/mail/send";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,7 +19,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ versionId: str
 
   const owned = (
     await getPool().query(
-      `SELECT id FROM estimate_versions WHERE id = $1 AND org_id = $2 AND deleted_at IS NULL`,
+      `SELECT v.id, pr.name AS project_name
+       FROM estimate_versions v
+       JOIN estimates e ON e.id = v.estimate_id
+       LEFT JOIN projects pr ON pr.id = e.project_id
+       WHERE v.id = $1 AND v.org_id = $2 AND v.deleted_at IS NULL`,
       [versionId, ws.orgId]
     )
   ).rows[0];
@@ -40,5 +45,18 @@ export async function POST(req: Request, ctx: { params: Promise<{ versionId: str
   const { rawToken } = await sendProposal(proposalId);
 
   const origin = new URL(req.url).origin;
-  return Response.json({ ok: true, proposalId, buyerUrl: `${origin}/p/${rawToken}` });
+  const buyerUrl = `${origin}/p/${rawToken}`;
+
+  // Attempt delivery; the outcome tells the GC whether to also copy the link.
+  const { outcome } = await sendOutbound({
+    orgId: ws.orgId,
+    kind: "proposal_delivery",
+    subjectTable: "proposals",
+    subjectId: proposalId,
+    recipientEmail: body.recipientEmail,
+    subject: `Your estimate from ${ws.orgName}`,
+    html: proposalEmailHtml(ws.orgName, owned.project_name ?? "your project", buyerUrl),
+  });
+
+  return Response.json({ ok: true, proposalId, buyerUrl, delivery: outcome });
 }
