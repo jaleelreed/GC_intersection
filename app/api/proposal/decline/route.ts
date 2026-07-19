@@ -1,10 +1,14 @@
 // US-026: buyer declines. Public (token-authorized). Terminal, no payment.
 import { declineProposal } from "../../../../lib/proposals/repo";
+import { checkRateLimit, clientKey, tooMany } from "../../../../lib/ratelimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const rl = await checkRateLimit("decline", clientKey(req), 30, 60, Date.now());
+  if (!rl.allowed) return tooMany();
+
   let body: { token?: string; reason?: string };
   try {
     body = await req.json();

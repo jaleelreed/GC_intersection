@@ -2,11 +2,15 @@
 // non-goal). Acceptance is a state change only (D6) and freezes the version
 // (D7); both happen inside acceptProposal.
 import { acceptProposal } from "../../../../lib/proposals/repo";
+import { checkRateLimit, clientKey, tooMany } from "../../../../lib/ratelimit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
+  const rl = await checkRateLimit("accept", clientKey(req), 30, 60, Date.now());
+  if (!rl.allowed) return tooMany();
+
   let body: { token?: string };
   try {
     body = await req.json();

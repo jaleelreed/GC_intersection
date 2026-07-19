@@ -30,6 +30,7 @@ d("database (migrated + seeded)", () => {
       "011_generation-and-delivery.sql",
       "020_lead-pipeline.sql",
       "030_rls-enforce.sql",
+      "040_rate-limits.sql",
       "090_reapply-platform-blocks.sql",
     ]);
   });
