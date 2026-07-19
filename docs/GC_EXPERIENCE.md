@@ -112,6 +112,21 @@ the GC is the payer; every feature serves them.
 
 ---
 
+## Part 3b — Gap backlog: CLOSED (2026-07-19)
+
+All eight backlog items from Part 4 shipped, each as a tested, CI-green PR:
+
+1. ✅ **Email delivery** — provider-gated (Resend when keyed; queued + link otherwise), `outbound_messages` record.
+2. ✅ **Lead pipeline** — stage (new/contacted/quoted/won/lost) + notes; Leads page is a filterable pipeline.
+3. ✅ **Editor completeness** — add / delete lines + markup rate editing (reorder deferred).
+4. ✅ **Distribution** — `/app/links`: create/name links per channel, per-link share URL + QR + embed snippet, channel analytics.
+5. ✅ **Convergence dashboard** — `/app/insights`: edit-coverage, learned-rate count, transparent learned-price list.
+6. ✅ **Branding + settings** — `/app/settings`: business name (→ hosted form + bid), service areas, markup defaults. *(Logo binary upload still deferred — needs blob storage.)*
+7. ✅ **Proposal management + decline** — `/app/bids`: status list, resend, withdraw; **US-026 decline path defined** (reason, GC notified, lead → lost).
+8. ✅ **Team + account** — `/app/team`: invite by email (sign-in-to-join, no email send), remove members; account summary.
+
+**Remaining deferrals:** live email requires a `RESEND_API_KEY` + verified sender; logo upload needs blob storage; line reorder in the editor. None block the day-to-day GC workflow.
+
 ## Part 4 — Suggested order for the gaps (highest leverage first)
 
 1. **Email delivery of the bid** (J3) — the send flow is half-built; copy-paste is the weakest
