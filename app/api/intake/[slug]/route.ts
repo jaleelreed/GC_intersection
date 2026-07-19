@@ -7,10 +7,10 @@ import { rateGuard } from "../../../../lib/ratelimit";
 import { captureError } from "../../../../lib/monitor";
 import { storePhotos } from "../../../../lib/intake/photos";
 import { deriveCountyFips } from "../../../../lib/enrichment/county";
-import { FixtureEnrichmentProvider } from "../../../../lib/enrichment/provider";
+import { getEnrichmentProvider } from "../../../../lib/enrichment/select";
 import { storeSnapshot } from "../../../../lib/enrichment/repo";
 
-const enrichment = new FixtureEnrichmentProvider();
+const enrichment = getEnrichmentProvider();
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
