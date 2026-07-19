@@ -4,6 +4,7 @@ import { extractHints } from "../lib/intake/hints";
 import { POST } from "../app/api/intake/[slug]/route";
 import { getPool } from "../lib/db";
 import { validPayload } from "./intake.schema.test";
+import { cleanupSubmissions } from "./helpers/cleanup";
 
 describe("extractHints (pure, deterministic)", () => {
   it("matches rules with excerpts and modest confidence", () => {
@@ -38,29 +39,8 @@ const params = (slug: string) => ({ params: Promise.resolve({ slug }) });
 
 d("US-005b stored hints", () => {
   afterAll(async () => {
-    const pool = getPool();
-    await pool.query(
-      `DELETE FROM intake_scope_hints WHERE intake_submission_id IN (
-         SELECT id FROM intake_submissions WHERE contact_email LIKE '%@hints-test.example')`
-    );
-    await pool.query(
-      `DELETE FROM notifications WHERE subject_id IN (
-         SELECT id FROM intake_submissions WHERE contact_email LIKE '%@hints-test.example')`
-    );
-    const ids = (
-      await pool.query(
-        `SELECT project_id FROM intake_submissions
-         WHERE contact_email LIKE '%@hints-test.example' AND project_id IS NOT NULL`
-      )
-    ).rows.map((r) => r.project_id);
-    await pool.query(
-      `DELETE FROM ai_jobs WHERE project_id = ANY($1)`, [ids]
-    );
-    await pool.query(
-      "DELETE FROM intake_submissions WHERE contact_email LIKE '%@hints-test.example'"
-    );
-    if (ids.length) await pool.query("DELETE FROM projects WHERE id = ANY($1)", [ids]);
-    await pool.end();
+    await cleanupSubmissions(getPool(), "%@hints-test.example");
+    await getPool().end();
   });
 
   it("submission with narrative creates ai_job + hints, verified_by pending", async () => {
