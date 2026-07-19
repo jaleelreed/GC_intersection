@@ -7,8 +7,10 @@ import { useState } from "react";
 export function AcceptBid({ token, initialStatus }: { token: string; initialStatus: string }) {
   const [status, setStatus] = useState(initialStatus);
   const [busy, setBusy] = useState(false);
-  const [mode, setMode] = useState<"idle" | "confirm-accept" | "decline">("idle");
+  const [mode, setMode] = useState<"idle" | "confirm-accept" | "decline" | "question">("idle");
   const [reason, setReason] = useState("");
+  const [question, setQuestion] = useState("");
+  const [questionSent, setQuestionSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (status === "accepted") {
@@ -67,10 +69,55 @@ export function AcceptBid({ token, initialStatus }: { token: string; initialStat
             </button>
           </div>
         </div>
+      ) : mode === "question" ? (
+        questionSent ? (
+          <p className="gci-hint">Sent — the contractor will get back to you.</p>
+        ) : (
+          <div>
+            <textarea
+              rows={2}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              placeholder="Ask the contractor a question about this estimate"
+              aria-label="Your question"
+              className="gci-wideinput"
+            />
+            <div className="gci-nav">
+              <button type="button" onClick={() => setMode("idle")}>Cancel</button>
+              <button
+                type="button"
+                className="gci-primary"
+                disabled={busy || !question.trim()}
+                onClick={async () => {
+                  setBusy(true);
+                  setError(null);
+                  try {
+                    const res = await fetch("/api/proposal/question", {
+                      method: "POST",
+                      headers: { "content-type": "application/json" },
+                      body: JSON.stringify({ token, question }),
+                    });
+                    if (res.ok) setQuestionSent(true);
+                    else setError("Could not send — try again.");
+                  } catch {
+                    setError("Network problem — try again.");
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              >
+                {busy ? "…" : "Send question"}
+              </button>
+            </div>
+          </div>
+        )
       ) : (
         <div className="gci-buyer-actions">
           <button type="button" className="gci-primary" onClick={() => setMode("confirm-accept")}>
             Accept this bid
+          </button>
+          <button type="button" className="gci-linkbtn" onClick={() => setMode("question")}>
+            Ask a question
           </button>
           <button type="button" className="gci-linkbtn" onClick={() => setMode("decline")}>
             Decline

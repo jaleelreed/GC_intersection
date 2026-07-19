@@ -187,15 +187,26 @@ export async function getProposalByToken(rawToken: string): Promise<BuyerProposa
  * from that moment the guard trigger refuses every write to its lines.
  * Idempotent: accepting an accepted proposal returns without change.
  */
-export async function acceptProposal(rawToken: string): Promise<{ accepted: boolean } | null> {
+export interface AcceptResult {
+  accepted: boolean;
+  orgId: string;
+  recipientEmail: string | null;
+  orgName: string;
+  projectName: string;
+}
+
+export async function acceptProposal(rawToken: string): Promise<AcceptResult | null> {
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
     const t = (
       await client.query(
-        `SELECT t.id AS token_id, t.proposal_id, t.org_id, p.status, p.estimate_version_id
+        `SELECT t.id AS token_id, t.proposal_id, t.org_id, p.status, p.estimate_version_id,
+                p.recipient_email, o.name AS org_name, pr.name AS project_name
          FROM proposal_access_tokens t
          JOIN proposals p ON p.id = t.proposal_id AND p.deleted_at IS NULL
+         JOIN organizations o ON o.id = p.org_id
+         JOIN projects pr ON pr.id = p.project_id
          WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND t.expires_at > now()
            AND t.deleted_at IS NULL
          FOR UPDATE OF p`,
@@ -206,9 +217,10 @@ export async function acceptProposal(rawToken: string): Promise<{ accepted: bool
       await client.query("ROLLBACK");
       return null;
     }
+    const info = { orgId: t.org_id, recipientEmail: t.recipient_email, orgName: t.org_name, projectName: t.project_name };
     if (t.status === "accepted") {
       await client.query("COMMIT");
-      return { accepted: true };
+      return { accepted: true, ...info };
     }
     assertTransition(t.status, "accepted");
 
@@ -225,7 +237,53 @@ export async function acceptProposal(rawToken: string): Promise<{ accepted: bool
       [t.org_id, t.proposal_id, t.token_id]
     );
     await client.query("COMMIT");
-    return { accepted: true };
+    return { accepted: true, ...info };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Buyer asks the GC a question from the bid page. Token-authorized; notifies
+ * the GC in-platform and records the event. Does not change proposal state.
+ */
+export async function askQuestion(rawToken: string, question: string): Promise<boolean> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const t = (
+      await client.query(
+        `SELECT t.id AS token_id, t.proposal_id, t.org_id
+         FROM proposal_access_tokens t
+         JOIN proposals p ON p.id = t.proposal_id AND p.deleted_at IS NULL
+         WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND t.expires_at > now()
+           AND t.deleted_at IS NULL`,
+        [hashToken(rawToken)]
+      )
+    ).rows[0];
+    if (!t) {
+      await client.query("ROLLBACK");
+      return false;
+    }
+    await client.query(
+      `INSERT INTO proposal_events (org_id, proposal_id, event, actor_kind, actor_token_id, meta)
+       VALUES ($1, $2, 'viewed', 'buyer_token', $3, $4)`,
+      [t.org_id, t.proposal_id, t.token_id, JSON.stringify({ question })]
+    );
+    await setOrg(client, t.org_id); // notifications is FORCE RLS
+    await client.query(
+      `INSERT INTO notifications (org_id, user_id, kind, subject_table, subject_id, title, body)
+       SELECT m.org_id, m.user_id, 'buyer_question', 'proposals', $2, 'Question on a bid', $3
+       FROM org_memberships m
+       WHERE m.org_id = $1 AND m.is_active AND m.deleted_at IS NULL
+         AND m.role IN ('owner_admin','project_manager')`,
+      [t.org_id, t.proposal_id, question.slice(0, 500)]
+    );
+    await client.query("COMMIT");
+    return true;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;

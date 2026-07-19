@@ -3,6 +3,7 @@
 // (D7); both happen inside acceptProposal.
 import { acceptProposal } from "../../../../lib/proposals/repo";
 import { rateGuard } from "../../../../lib/ratelimit";
+import { sendOutbound } from "../../../../lib/mail/send";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,5 +22,18 @@ export async function POST(req: Request) {
 
   const result = await acceptProposal(body.token);
   if (!result) return Response.json({ error: "link is invalid or expired" }, { status: 404 });
+
+  // Confirmation to the buyer (queued if no mail provider is configured).
+  if (result.recipientEmail) {
+    await sendOutbound({
+      orgId: result.orgId,
+      kind: "proposal_accepted_confirmation",
+      subjectTable: "proposals",
+      subjectId: body.token.slice(0, 8),
+      recipientEmail: result.recipientEmail,
+      subject: `You accepted the estimate from ${result.orgName}`,
+      html: `<p>You accepted the estimate for ${result.projectName} from ${result.orgName}.</p><p>They&rsquo;ll be in touch to finalize a written agreement. No payment was collected.</p>`,
+    }).catch(() => {});
+  }
   return Response.json({ ok: true });
 }
