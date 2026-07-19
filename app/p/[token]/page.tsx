@@ -32,12 +32,12 @@ export default async function BuyerProposalPage({ params }: { params: Promise<{ 
 
       {view.coverNote && <p className="gci-covernote">{view.coverNote}</p>}
 
-      {lines.length > 0 && (
+      {lines.filter((l) => !l.is_alternate).length > 0 && (
         <table className="gci-bidlines">
           <tbody>
-            {lines.map((l, i) => (
+            {lines.filter((l) => !l.is_alternate).map((l, i) => (
               <tr key={i}>
-                <td>{l.description}</td>
+                <td>{l.description}{l.is_allowance && <span className="gci-hint"> (allowance)</span>}</td>
                 <td className="num">{money(l.total)}</td>
               </tr>
             ))}
@@ -46,6 +46,23 @@ export default async function BuyerProposalPage({ params }: { params: Promise<{ 
       )}
 
       <p className="gci-range">{money(view.grandTotal)}</p>
+
+      {lines.some((l) => l.is_alternate) && (
+        <section className="gci-alternates">
+          <h2>Optional add-ons</h2>
+          <p className="gci-hint">Not included in the total above — available if you want them.</p>
+          <table className="gci-bidlines">
+            <tbody>
+              {lines.filter((l) => l.is_alternate).map((l, i) => (
+                <tr key={i}>
+                  <td>{l.description}</td>
+                  <td className="num">+{money(l.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      )}
       {view.rangeLow != null && view.rangeHigh != null && (
         <p className="gci-hint">Estimated range {money(view.rangeLow)} – {money(view.rangeHigh)}</p>
       )}

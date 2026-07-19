@@ -26,6 +26,9 @@ export function EstimateEditor({
     Object.fromEntries(estimate.lines.map((l) => [l.lineage_id, { quantity: l.quantity, unit_cost: l.unit_cost }]))
   );
   const [deleted, setDeleted] = useState<Set<string>>(new Set());
+  const [flags, setFlags] = useState<Record<string, { is_allowance: boolean; is_alternate: boolean }>>(
+    Object.fromEntries(estimate.lines.map((l) => [l.lineage_id, { is_allowance: l.is_allowance, is_alternate: l.is_alternate }]))
+  );
   const [adds, setAdds] = useState<NewRow[]>([]);
   const [markupRates, setMarkupRates] = useState<Record<string, string>>(
     Object.fromEntries(estimate.markups.map((m) => [m.name, m.rate_pct ?? ""]))
@@ -41,6 +44,7 @@ export function EstimateEditor({
     let base = 0;
     for (const l of estimate.lines) {
       if (deleted.has(l.lineage_id)) continue;
+      if (flags[l.lineage_id]?.is_alternate) continue; // alternates are optional add-ons
       const d = draft[l.lineage_id];
       base += round2(Number(d.quantity) * Number(d.unit_cost));
     }
@@ -68,10 +72,16 @@ export function EstimateEditor({
     }).length +
     deleted.size +
     adds.filter((a) => a.description.trim() && a.cost_code_id && a.quantity && a.unit_cost).length +
-    estimate.markups.filter((m) => (markupRates[m.name] ?? "") !== (m.rate_pct ?? "")).length;
+    estimate.markups.filter((m) => (markupRates[m.name] ?? "") !== (m.rate_pct ?? "")).length +
+    estimate.lines.filter(
+      (l) => flags[l.lineage_id].is_allowance !== l.is_allowance || flags[l.lineage_id].is_alternate !== l.is_alternate
+    ).length;
 
   function set(lineage: string, field: "quantity" | "unit_cost", value: string) {
     setDraft((d) => ({ ...d, [lineage]: { ...d[lineage], [field]: value.replace(/[^0-9.]/g, "") } }));
+  }
+  function toggleFlag(lineage: string, field: "is_allowance" | "is_alternate") {
+    setFlags((f) => ({ ...f, [lineage]: { ...f[lineage], [field]: !f[lineage][field] } }));
   }
   function toggleDelete(lineage: string) {
     setDeleted((s) => {
@@ -103,11 +113,14 @@ export function EstimateEditor({
     const markups = estimate.markups
       .filter((m) => (markupRates[m.name] ?? "") !== (m.rate_pct ?? ""))
       .map((m) => ({ name: m.name, rate_pct: markupRates[m.name] || "0" }));
+    const flagEdits = estimate.lines
+      .filter((l) => flags[l.lineage_id].is_allowance !== l.is_allowance || flags[l.lineage_id].is_alternate !== l.is_alternate)
+      .map((l) => ({ lineage_id: l.lineage_id, is_allowance: flags[l.lineage_id].is_allowance, is_alternate: flags[l.lineage_id].is_alternate }));
     try {
       const res = await fetch(`/api/estimate/${estimate.versionId}/edit`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ edits, deletes: [...deleted], adds: validAdds, markups }),
+        body: JSON.stringify({ edits, deletes: [...deleted], adds: validAdds, markups, flags: flagEdits }),
       });
       const data = await res.json();
       if (!res.ok) setError(data.error ?? "Save failed.");
@@ -140,19 +153,30 @@ export function EstimateEditor({
           {estimate.lines.map((l) => {
             const d = draft[l.lineage_id];
             const isDel = deleted.has(l.lineage_id);
+            const fl = flags[l.lineage_id];
             const total = round2(Number(d.quantity) * Number(d.unit_cost));
             const edited = !isDel && (d.quantity !== l.quantity || d.unit_cost !== l.unit_cost);
             return (
-              <tr key={l.lineage_id} className={isDel ? "gci-del-row" : edited ? "gci-edited-row" : ""}>
+              <tr key={l.lineage_id} className={isDel ? "gci-del-row" : fl.is_alternate ? "gci-alt-row" : edited ? "gci-edited-row" : ""}>
                 <td>
                   <div>{l.description}</div>
-                  <div className="gci-linemeta">{l.cost_code} {badge(l.seed_source, edited)}</div>
+                  <div className="gci-linemeta">
+                    {l.cost_code} {badge(l.seed_source, edited)}
+                    {fl.is_allowance && <span className="gci-prov gci-prov-market">allowance</span>}
+                    {fl.is_alternate && <span className="gci-prov gci-prov-learned">alternate</span>}
+                  </div>
                 </td>
                 <td><input inputMode="decimal" value={d.quantity} disabled={isDel} onChange={(e) => set(l.lineage_id, "quantity", e.target.value)} aria-label={`quantity for ${l.description}`} /></td>
                 <td>{l.uom}</td>
                 <td className="num"><input inputMode="decimal" value={d.unit_cost} disabled={isDel} onChange={(e) => set(l.lineage_id, "unit_cost", e.target.value)} aria-label={`unit cost for ${l.description}`} /></td>
                 <td className="num">{money(total)}</td>
-                <td>
+                <td className="gci-line-actions">
+                  <button type="button" className="gci-linkbtn" title="Allowance (a budgeted line the buyer may adjust)" onClick={() => toggleFlag(l.lineage_id, "is_allowance")}>
+                    {fl.is_allowance ? "✓allow" : "allow"}
+                  </button>
+                  <button type="button" className="gci-linkbtn" title="Alternate (optional add-on, excluded from the total)" onClick={() => toggleFlag(l.lineage_id, "is_alternate")}>
+                    {fl.is_alternate ? "✓alt" : "alt"}
+                  </button>
                   <button type="button" className="gci-linkbtn" onClick={() => toggleDelete(l.lineage_id)}>
                     {isDel ? "undo" : "remove"}
                   </button>

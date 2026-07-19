@@ -12,6 +12,8 @@ export interface EditorLine {
   unit_cost: string;
   total: string;
   seed_source: string;
+  is_allowance: boolean;
+  is_alternate: boolean;
 }
 
 export interface EditorMarkup {
@@ -133,7 +135,8 @@ export async function currentEstimateForLead(
   const lines = (
     await getPool().query(
       `SELECT l.lineage_id, c.code AS cost_code, c.csi_division AS division,
-              l.description, l.quantity, l.uom, l.unit_cost, l.total, l.seed_source
+              l.description, l.quantity, l.uom, l.unit_cost, l.total, l.seed_source,
+              l.is_allowance, l.is_alternate
        FROM estimate_lines l
        LEFT JOIN cost_codes c ON c.id = l.cost_code_id
        WHERE l.estimate_version_id = $1 AND l.deleted_at IS NULL
