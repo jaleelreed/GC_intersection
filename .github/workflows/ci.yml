@@ -45,9 +45,16 @@ jobs:
       - name: serve + assert 200 (US-004)
         run: |
           npm run start &
+          SERVER_PID=$!
+          ok=0
           for i in $(seq 1 30); do
             code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/api/health || true)
-            if [ "$code" = "200" ]; then echo "health 200"; exit 0; fi
+            if [ "$code" = "200" ]; then echo "health 200"; ok=1; break; fi
             sleep 1
           done
-          echo "server never answered 200"; exit 1
+          kill $SERVER_PID 2>/dev/null || true
+          [ "$ok" = "1" ] || { echo "server never answered 200"; exit 1; }
+      - name: e2e (Playwright, public flows)
+        run: |
+          npx playwright install --with-deps chromium
+          npm run test:e2e
