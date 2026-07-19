@@ -51,16 +51,25 @@ d("US-008 in-platform notification", () => {
     expect(rows[0].read_at).toBeNull();
   });
 
-  it("RLS: another org cannot see these notifications even with a raw query", async () => {
-    // Same query, wrong org context → RLS returns nothing.
-    const rows = (
-      await orgQuery(
-        OTHER_ORG,
-        `SELECT count(*)::int AS c FROM notifications WHERE subject_table = 'intake_submissions'
-         AND subject_id IN (SELECT id FROM intake_submissions WHERE contact_email LIKE '%@notify-test.example')`
-      )
-    ).rows[0];
-    expect(rows.c).toBe(0);
+  it("RLS: a non-privileged role in another org context sees zero notifications", async () => {
+    // SET ROLE to the non-superuser probe role so RLS actually applies (CI's
+    // postgres role is a superuser and would otherwise bypass FORCE RLS).
+    async function countAs(org: string): Promise<number> {
+      const c = await getPool().connect();
+      try {
+        await c.query("BEGIN");
+        await c.query(`SET LOCAL app.org_id = '${org}'`);
+        await c.query("SET LOCAL ROLE rls_probe");
+        const r = await c.query<{ c: number }>("SELECT count(*)::int AS c FROM notifications");
+        await c.query("ROLLBACK");
+        return r.rows[0].c;
+      } finally {
+        c.release();
+      }
+    }
+    // The fixture org has notifications; another org, under RLS, sees none.
+    expect(await countAs(ORG)).toBeGreaterThan(0);
+    expect(await countAs(OTHER_ORG)).toBe(0);
   });
 
   it("spam produces no notification", async () => {
