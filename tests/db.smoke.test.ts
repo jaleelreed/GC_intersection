@@ -28,6 +28,7 @@ d("database (migrated + seeded)", () => {
       "000_launch-subset.sql",
       "010_residential-intake.sql",
       "011_generation-and-delivery.sql",
+      "020_lead-pipeline.sql",
       "090_reapply-platform-blocks.sql",
     ]);
   });
