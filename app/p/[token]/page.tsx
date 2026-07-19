@@ -49,6 +49,11 @@ export default async function BuyerProposalPage({ params }: { params: Promise<{ 
         <AcceptBid token={token} initialStatus={view.status} />
       </div>
 
+      <p className="gci-hint gci-disclaimer">
+        This is an estimate, not a binding contract. Final scope and price are set in a
+        separate written agreement between you and the contractor. No payment is collected here.
+      </p>
+
       <footer className="gci-fingerprint">
         Prepared with GC_intersection · gc-intersection.vercel.app
       </footer>
