@@ -4,6 +4,7 @@ import { currentUserEmail } from "../../../lib/auth/server";
 import { resolveWorkspace } from "../../../lib/workspace";
 import { ensureWorkspace } from "../../../lib/onboarding/provision";
 import { convergenceSummary, learnedRates } from "../../../lib/insights/repo";
+import { funnel, recentActivity } from "../../../lib/audit/repo";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,12 @@ export default async function InsightsPage() {
   const user = (await currentUserEmail())!;
   const ws = (await resolveWorkspace(user.email)) ?? (await ensureWorkspace(user.email, user.name));
 
-  const [summary, rates] = await Promise.all([convergenceSummary(ws.orgId), learnedRates(ws.orgId)]);
+  const [summary, rates, fn, activity] = await Promise.all([
+    convergenceSummary(ws.orgId),
+    learnedRates(ws.orgId),
+    funnel(ws.orgId),
+    recentActivity(ws.orgId),
+  ]);
 
   return (
     <main className="gci-page">
@@ -43,6 +49,33 @@ export default async function InsightsPage() {
         the engine has learned your pricing (D10). Every edit teaches it; nothing is pooled with
         other contractors.
       </p>
+
+      <h2>Your funnel</h2>
+      <div className="gci-funnel">
+        <div className="gci-funnel-step"><span className="gci-stat-num">{fn.leads}</span><span className="gci-hint">leads</span></div>
+        <div className="gci-funnel-step"><span className="gci-stat-num">{fn.quoted}</span><span className="gci-hint">quoted</span></div>
+        <div className="gci-funnel-step"><span className="gci-stat-num">{fn.accepted}</span><span className="gci-hint">accepted</span></div>
+        <div className="gci-funnel-step"><span className="gci-stat-num">{fn.declined}</span><span className="gci-hint">declined</span></div>
+      </div>
+      <p className="gci-hint">
+        {fn.quoted > 0
+          ? `Win rate: ${Math.round((fn.accepted / fn.quoted) * 100)}% of quoted bids accepted.`
+          : "Send your first bid to start tracking your win rate."}
+      </p>
+
+      {activity.length > 0 && (
+        <>
+          <h2>Recent activity</h2>
+          <ul className="gci-activity">
+            {activity.map((a, i) => (
+              <li key={i}>
+                <span className="gci-act-action">{a.action}</span>
+                <span className="gci-hint"> · {new Date(a.occurred_at).toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
 
       <h2>What it&rsquo;s learned from you</h2>
       {rates.length === 0 ? (

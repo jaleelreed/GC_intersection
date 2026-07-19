@@ -728,3 +728,10 @@ legend {
   border: none; background: #b91c1c; color: #fff; cursor: pointer; font-weight: 700; line-height: 1;
 }
 .gci-lead-photos { margin-top: 20px; }
+
+/* Funnel + activity */
+.gci-funnel { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; }
+.gci-funnel-step { flex: 1; min-width: 80px; border: 1px solid var(--gci-border); border-radius: 10px; padding: 12px; text-align: center; display: flex; flex-direction: column; gap: 2px; }
+.gci-activity { list-style: none; padding: 0; }
+.gci-activity li { padding: 6px 0; border-bottom: 1px solid var(--gci-border); }
+.gci-act-action { font-weight: 700; text-transform: capitalize; }
