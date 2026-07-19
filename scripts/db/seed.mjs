@@ -33,8 +33,24 @@ try {
     [TEST_MEMBERSHIP_ID, TEST_ORG_ID, TEST_USER_ID]
   );
 
+  // US-005: one intake link per channel + an inactive one (404 test path).
+  const LINKS = [
+    ["00000000-0000-4000-8000-000000000101", "fixture-link", "link", true],
+    ["00000000-0000-4000-8000-000000000102", "fixture-embed", "embed", true],
+    ["00000000-0000-4000-8000-000000000103", "fixture-qr", "qr", true],
+    ["00000000-0000-4000-8000-000000000104", "fixture-inactive", "link", false],
+  ];
+  for (const [id, slug, channel, active] of LINKS) {
+    await client.query(
+      `INSERT INTO intake_links (id, org_id, slug, channel, label, display_name, is_active)
+       VALUES ($1, $2, $3, $4, $5, 'Fixture Renovations LLC', $6)
+       ON CONFLICT (id) DO NOTHING`,
+      [id, TEST_ORG_ID, slug, channel, `Fixture ${channel}`, active]
+    );
+  }
+
   await client.query("COMMIT");
-  console.log(`seeded fixed test account (org ${TEST_ORG_ID})`);
+  console.log(`seeded fixed test account (org ${TEST_ORG_ID}) + ${LINKS.length} intake links`);
 } catch (err) {
   await client.query("ROLLBACK");
   console.error(`seed failed: ${err.message}`);
