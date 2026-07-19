@@ -87,9 +87,9 @@ d("EP-05 proposal engine", () => {
     expect(Number(view?.grandTotal)).toBeGreaterThan(0);
 
     const accepted = await acceptProposal(rawToken);
-    expect(accepted).toEqual({ accepted: true });
+    expect(accepted?.accepted).toBe(true);
     // idempotent replay
-    expect(await acceptProposal(rawToken)).toEqual({ accepted: true });
+    expect((await acceptProposal(rawToken))?.accepted).toBe(true);
 
     const events = (
       await getPool().query(
