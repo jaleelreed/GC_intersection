@@ -101,6 +101,18 @@ export const intakeSubmissionSchema = z
 
     narrative: z.string().max(2000).nullable().default(null),
 
+    // Optional client-compressed JPEG photos (data URLs). Capped so the whole
+    // payload stays under the serverless request limit.
+    photos: z
+      .array(
+        z.object({
+          content_type: z.enum(["image/jpeg", "image/png", "image/webp"]),
+          data_base64: z.string().max(700_000), // ~500KB binary each
+        })
+      )
+      .max(6)
+      .default([]),
+
     // Anti-spam: honeypot must stay empty; form_started_at drives the 3s floor.
     website: z.string().max(0).optional(),
     form_started_at: z.number().int().positive(),
