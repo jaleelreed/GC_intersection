@@ -4,6 +4,7 @@ import { resolveWorkspace } from "../../../lib/workspace";
 import { ensureWorkspace } from "../../../lib/onboarding/provision";
 import { listMembers } from "../../../lib/team/repo";
 import { TeamManager } from "../../../components/team/TeamManager";
+import { AccountControls } from "../../../components/account/AccountControls";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +25,10 @@ export default async function TeamPage() {
       </section>
 
       {ws.role === "owner_admin" ? (
-        <TeamManager members={members} />
+        <>
+          <TeamManager members={members} />
+          <AccountControls orgName={ws.orgName} />
+        </>
       ) : (
         <>
           <h2>Members</h2>
