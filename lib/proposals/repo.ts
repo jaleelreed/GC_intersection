@@ -126,6 +126,8 @@ export interface BuyerProposalView {
 export interface BidLine {
   description: string;
   total: string;
+  is_allowance: boolean;
+  is_alternate: boolean;
 }
 
 /**
@@ -135,12 +137,12 @@ export interface BidLine {
  */
 export async function bidLinesForToken(rawToken: string): Promise<BidLine[]> {
   const r = await getPool().query(
-    `SELECT l.description, l.total
+    `SELECT l.description, l.total, l.is_allowance, l.is_alternate
      FROM proposal_access_tokens t
      JOIN proposals p ON p.id = t.proposal_id AND p.deleted_at IS NULL
      JOIN estimate_lines l ON l.estimate_version_id = p.estimate_version_id AND l.deleted_at IS NULL
      WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND t.expires_at > now() AND t.deleted_at IS NULL
-     ORDER BY l.sort_order`,
+     ORDER BY l.is_alternate, l.sort_order`,
     [hashToken(rawToken)]
   );
   return r.rows;

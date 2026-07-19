@@ -29,10 +29,17 @@ export interface MarkupEdit {
   rate_pct: string;
 }
 
+export interface LineFlag {
+  lineage_id: string;
+  is_allowance?: boolean;
+  is_alternate?: boolean;
+}
+
 export interface EditOptions {
   deletes?: string[]; // lineage_ids to remove in the new version
   adds?: NewLine[]; // GC-added lines (fresh lineage, seed_source gc_edit)
   markups?: MarkupEdit[]; // set rate_pct on existing markups by name
+  flags?: LineFlag[]; // mark lines as allowance / alternate
 }
 
 /**
@@ -234,10 +241,27 @@ export async function editIntoNewVersion(
       );
     }
 
-    // Retotal the new version (lines + re-run ordered markups).
+    // Line flags: allowance / alternate. Alternates are OPTIONAL adds — they
+    // are excluded from the base total below.
+    for (const f of opts.flags ?? []) {
+      const sets: string[] = [];
+      const params: unknown[] = [next.id, f.lineage_id];
+      if (f.is_allowance !== undefined) { params.push(f.is_allowance); sets.push(`is_allowance = $${params.length}`); }
+      if (f.is_alternate !== undefined) { params.push(f.is_alternate); sets.push(`is_alternate = $${params.length}`); }
+      if (sets.length === 0) continue;
+      await client.query(
+        `UPDATE estimate_lines SET ${sets.join(", ")}
+         WHERE estimate_version_id = $1 AND lineage_id = $2 AND deleted_at IS NULL`,
+        params
+      );
+    }
+
+    // Retotal: base excludes ALTERNATE lines (optional add-ons priced but not
+    // in the accepted total). Allowances stay in.
     const base = (
       await client.query(
-        `SELECT coalesce(sum(total), 0) AS t FROM estimate_lines WHERE estimate_version_id = $1 AND deleted_at IS NULL`,
+        `SELECT coalesce(sum(total), 0) AS t FROM estimate_lines
+         WHERE estimate_version_id = $1 AND deleted_at IS NULL AND is_alternate = false`,
         [next.id]
       )
     ).rows[0].t;

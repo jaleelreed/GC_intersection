@@ -712,3 +712,9 @@ legend {
 .gci-bid-terms { margin-top: 16px; }
 .gci-bid-terms h2 { font-size: 15px; margin: 12px 0 4px; }
 .gci-bid-terms p { margin: 0; white-space: pre-wrap; color: var(--gci-ink); }
+
+/* Alternates & allowances */
+.gci-alt-row { opacity: 0.85; }
+.gci-line-actions { white-space: nowrap; }
+.gci-line-actions .gci-linkbtn { padding: 4px 4px; }
+.gci-alternates { margin-top: 20px; padding-top: 8px; border-top: 1px dashed var(--gci-border); }
