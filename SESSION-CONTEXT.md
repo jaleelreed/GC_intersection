@@ -53,6 +53,14 @@ Value order = dependency order. EP-05 may parallel EP-04 if file surfaces don't 
 
 Session queue: B2 architecture (`spec-architecture` — confirm stack + ADR; ratify D1, D7, D8) → EP-00 (`spec-skeleton`) → D contracts (`spec-contracts`, US-005..013 — **blocked on ADR-2**) → E design (`spec-design`, five states per screen; hero moments: intake form, the reveal, the editor; both form skins from one component set) → G build, one story per session.
 
+## 5b. Amendments (append-only)
+
+- **2026-07-18 — ADR-2 RESOLVED: fast-follow** (operator decision). Enrichment interface +
+  fixture implementation build at launch; live assessor/permit/GIS integrations land after
+  soft launch. See `docs/adr/ADR-002-enrichment-timing.md`. The D-contracts session is
+  unblocked; §2's "ADR-2, still open" and the parked-list entry "US-005c full enrichment"
+  are superseded by this line.
+
 ## 6. What this session should do
 
 State which session you are (B2 / skeleton / contracts / design / build US-00N). If unstated, assume the next unstarted item in the queue above. Restate the relevant contract from build-plan.md as amended by §2 of this file, then proceed per the loop.
