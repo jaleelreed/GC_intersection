@@ -36,6 +36,23 @@ export interface EditorEstimate {
   markups: EditorMarkup[];
 }
 
+export interface CostCodeOption {
+  id: string;
+  code: string;
+  title: string;
+}
+
+/** Cost codes for the add-line picker: platform CSI seed + the org's own. */
+export async function costCodeOptions(orgId: string): Promise<CostCodeOption[]> {
+  const r = await getPool().query(
+    `SELECT id, code, title FROM cost_codes
+     WHERE (org_id = $1 OR org_id IS NULL) AND is_active AND deleted_at IS NULL
+     ORDER BY code`,
+    [orgId]
+  );
+  return r.rows;
+}
+
 export async function currentEstimateForLead(
   submissionId: string,
   orgId: string
