@@ -2,6 +2,7 @@
 // schema, snapshots channel/org from the link, applies the spam floor.
 import { intakeSubmissionSchema, isSpam } from "../../../../lib/intake/schema";
 import { findActiveLink, insertSubmission } from "../../../../lib/intake/repo";
+import { convertSubmission } from "../../../../lib/intake/convert";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,6 +41,17 @@ export async function POST(
   // Spam is stored (status='spam'), never surfaced to the submitter.
   const status = isSpam(parsed.data, Date.now()) ? "spam" : "submitted";
   const { id } = await insertSubmission(link, parsed.data, status);
+
+  // US-007: conversion runs after the submission is safely stored. A failure
+  // here leaves the submission 'submitted' (retryable) — the homeowner still
+  // gets success; the lead is never lost.
+  if (status === "submitted") {
+    try {
+      await convertSubmission(id);
+    } catch (err) {
+      console.error("intake conversion failed", { submission_id: id, err });
+    }
+  }
 
   return Response.json({ id }, { status: 201 });
 }
