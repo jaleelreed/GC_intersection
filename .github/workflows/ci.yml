@@ -23,6 +23,8 @@ jobs:
           --health-retries 10
     env:
       DATABASE_URL: postgres://gc:gc@localhost:5432/gc_intersection_test
+      # Enables the e2e auth bypass (lib/auth/server.ts) — CI only, never prod.
+      E2E_AUTH_SECRET: ci-e2e-secret
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
