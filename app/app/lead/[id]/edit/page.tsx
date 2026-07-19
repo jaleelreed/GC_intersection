@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { currentUserEmail } from "../../../../../lib/auth/server";
 import { resolveWorkspace } from "../../../../../lib/workspace";
-import { currentEstimateForLead } from "../../../../../lib/estimate/read";
+import { currentEstimateForLead, costCodeOptions } from "../../../../../lib/estimate/read";
 import { EstimateEditor } from "../../../../../components/estimate/EstimateEditor";
 
 export const dynamic = "force-dynamic";
@@ -17,6 +17,7 @@ export default async function EditEstimatePage({ params }: { params: Promise<{ i
 
   const estimate = await currentEstimateForLead(id, ws.orgId);
   if (!estimate) notFound();
+  const costCodes = await costCodeOptions(ws.orgId);
 
   return (
     <main className="gci-page gci-wide">
@@ -34,7 +35,7 @@ export default async function EditEstimatePage({ params }: { params: Promise<{ i
           the record of what was agreed.
         </p>
       ) : (
-        <EstimateEditor estimate={estimate} />
+        <EstimateEditor estimate={estimate} costCodes={costCodes} />
       )}
     </main>
   );

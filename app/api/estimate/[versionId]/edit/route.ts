@@ -5,7 +5,7 @@
 import { currentUserEmail } from "../../../../../lib/auth/server";
 import { resolveWorkspace } from "../../../../../lib/workspace";
 import { getPool } from "../../../../../lib/db";
-import { editIntoNewVersion, type LineEdit } from "../../../../../lib/estimate/edit";
+import { editIntoNewVersion, type LineEdit, type NewLine, type MarkupEdit } from "../../../../../lib/estimate/edit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,7 +28,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ versionId: str
   if (!owned) return Response.json({ error: "not found" }, { status: 404 });
   if (owned.locked_at) return Response.json({ error: "estimate is accepted and locked" }, { status: 409 });
 
-  let body: { edits?: LineEdit[] };
+  let body: { edits?: LineEdit[]; deletes?: string[]; adds?: NewLine[]; markups?: MarkupEdit[] };
   try {
     body = await req.json();
   } catch {
@@ -37,10 +37,22 @@ export async function POST(req: Request, ctx: { params: Promise<{ versionId: str
   const edits = (body.edits ?? []).filter(
     (e) => e && typeof e.lineage_id === "string" && (e.quantity !== undefined || e.unit_cost !== undefined || e.description !== undefined)
   );
-  if (edits.length === 0) return Response.json({ error: "no edits" }, { status: 400 });
+  const deletes = (body.deletes ?? []).filter((d) => typeof d === "string");
+  const adds = (body.adds ?? []).filter(
+    (a) => a && a.description?.trim() && a.cost_code_id && a.uom && a.quantity && a.unit_cost
+  );
+  const markups = (body.markups ?? []).filter((m) => m && m.name && m.rate_pct !== undefined);
+
+  if (edits.length + deletes.length + adds.length + markups.length === 0) {
+    return Response.json({ error: "no changes" }, { status: 400 });
+  }
 
   try {
-    const { newVersionId, editedLineageIds } = await editIntoNewVersion(versionId, edits);
+    const { newVersionId, editedLineageIds } = await editIntoNewVersion(versionId, edits, {
+      deletes,
+      adds,
+      markups,
+    });
     return Response.json({ ok: true, newVersionId, edited: editedLineageIds.length });
   } catch (err) {
     return Response.json({ error: (err as Error).message }, { status: 422 });

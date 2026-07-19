@@ -16,6 +16,25 @@ export interface LineEdit {
   description?: string;
 }
 
+export interface NewLine {
+  description: string;
+  cost_code_id: string;
+  uom: string;
+  quantity: string;
+  unit_cost: string;
+}
+
+export interface MarkupEdit {
+  name: string;
+  rate_pct: string;
+}
+
+export interface EditOptions {
+  deletes?: string[]; // lineage_ids to remove in the new version
+  adds?: NewLine[]; // GC-added lines (fresh lineage, seed_source gc_edit)
+  markups?: MarkupEdit[]; // set rate_pct on existing markups by name
+}
+
 /**
  * Creates version N+1 as a faithful copy of the given version (lines keep
  * their lineage_id; markups copied), then applies edits to the new version.
@@ -23,7 +42,8 @@ export interface LineEdit {
  */
 export async function editIntoNewVersion(
   versionId: string,
-  edits: LineEdit[]
+  edits: LineEdit[],
+  opts: EditOptions = {}
 ): Promise<{ newVersionId: string; editedLineageIds: string[] }> {
   const client = await getPool().connect();
   try {
@@ -166,6 +186,52 @@ export async function editIntoNewVersion(
           [src.org_id, description, line.cost_code_id, line.uom, unit_cost, obs.id, job?.msa_code ?? "47900"]
         );
       }
+    }
+
+    // Deletes: soft-remove lines in the new version (source untouched).
+    for (const lineage of opts.deletes ?? []) {
+      await client.query(
+        `UPDATE estimate_lines SET deleted_at = now()
+         WHERE estimate_version_id = $1 AND lineage_id = $2 AND deleted_at IS NULL`,
+        [next.id, lineage]
+      );
+    }
+
+    // Adds: GC-authored lines. Fresh lineage, gc_edit provenance, invariant-checked.
+    let addOrder = (
+      await client.query(
+        `SELECT coalesce(max(sort_order), 0) AS m FROM estimate_lines WHERE estimate_version_id = $1`,
+        [next.id]
+      )
+    ).rows[0].m;
+    for (const add of opts.adds ?? []) {
+      const totalCents = scaledToCentsString(mulScaled(toScaled(add.quantity), toScaled(add.unit_cost)));
+      assertConvertibleLine({
+        cost_code_id: add.cost_code_id,
+        cost_kind: "subcontract",
+        description: add.description,
+        quantity: add.quantity,
+        uom: add.uom,
+        unit_cost: add.unit_cost,
+        total: totalCents,
+        seed_source: "gc_edit",
+      });
+      await client.query(
+        `INSERT INTO estimate_lines
+           (org_id, estimate_version_id, sort_order, cost_code_id, cost_kind, description,
+            quantity, uom, unit_cost, total, seed_source)
+         VALUES ($1,$2,$3,$4,'subcontract',$5,$6,$7,$8,$9,'gc_edit')`,
+        [src.org_id, next.id, ++addOrder, add.cost_code_id, add.description, add.quantity, add.uom, add.unit_cost, totalCents]
+      );
+    }
+
+    // Markup rate edits (matched by name; retotal recomputes amounts).
+    for (const m of opts.markups ?? []) {
+      await client.query(
+        `UPDATE estimate_markups SET rate_pct = $3
+         WHERE estimate_version_id = $1 AND name = $2 AND deleted_at IS NULL`,
+        [next.id, m.name, m.rate_pct]
+      );
     }
 
     // Retotal the new version (lines + re-run ordered markups).

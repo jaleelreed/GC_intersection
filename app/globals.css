@@ -598,3 +598,14 @@ legend {
 }
 .gci-note-list { list-style: none; padding: 0; }
 .gci-note-list li { border-bottom: 1px solid var(--gci-border); padding: 8px 0; }
+
+/* Editor completeness (Gap 3) */
+.gci-del-row { opacity: 0.5; text-decoration: line-through; }
+.gci-add-row { background: #f0fdf4; }
+.gci-add-row .gci-wideinput { width: 100%; margin-bottom: 4px; }
+.gci-add-row select, .gci-add-row input { font-size: 14px; padding: 6px; border: 1px solid var(--gci-border); border-radius: 6px; }
+.gci-linkbtn { background: none; border: none; color: var(--gci-accent); cursor: pointer; font-size: 13px; padding: 4px; }
+.gci-markup-row { display: flex; align-items: center; gap: 8px; margin: 6px 0; font-weight: 600; }
+.gci-markup-row span:first-child { min-width: 90px; }
+.gci-markup-row input { width: 70px; padding: 8px; text-align: right; border: 1px solid var(--gci-border); border-radius: 6px; }
+.gci-lines select { max-width: 160px; }
