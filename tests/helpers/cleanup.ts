@@ -69,6 +69,14 @@ export async function cleanupSubmissions(pool: Pool, emailPattern: string): Prom
     await pool.query(`DELETE FROM enrichment_snapshots WHERE id = ANY($1)`, [snapshotIds]);
   }
   if (projectIds.length) {
+    // Convergence chain (US-019/020): harvested cost_items reference
+    // observations, which reference projects.
+    await pool.query(
+      `DELETE FROM cost_items WHERE source_observation_id IN (
+         SELECT id FROM benchmark_observations WHERE project_id = ANY($1))`,
+      [projectIds]
+    );
+    await pool.query(`DELETE FROM benchmark_observations WHERE project_id = ANY($1)`, [projectIds]);
     await pool.query(`DELETE FROM ai_jobs WHERE project_id = ANY($1)`, [projectIds]);
     await pool.query(`DELETE FROM projects WHERE id = ANY($1)`, [projectIds]);
   }
