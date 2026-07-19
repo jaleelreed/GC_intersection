@@ -389,3 +389,42 @@ legend {
   font-weight: 700;
   color: #15803d;
 }
+
+/* Bid document (US-016) */
+.gci-bidlines {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+.gci-bidlines td {
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--gci-border);
+}
+.gci-bidlines td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.gci-printbtn {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--gci-border);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+.gci-fingerprint {
+  margin-top: 32px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gci-border);
+  color: var(--gci-muted);
+  font-size: 12px;
+}
+
+@media print {
+  .gci-noprint { display: none !important; }
+  .gci-accept-area { display: none !important; }
+  body { background: #fff; }
+  .gci-page { max-width: 100%; }
+}
