@@ -5,13 +5,16 @@
 import { createHash, randomBytes } from "node:crypto";
 import { getPool } from "../db";
 
-// US-018: the machine. 'declined' exists as a state but has NO transition
-// here — US-026 is parked until the decline path is defined. Do not add it.
+// US-018/US-026: the machine. Decline is now DEFINED (Gap 7): a buyer may
+// decline a proposal they have received (sent) or viewed; declining records
+// the state + an optional reason, notifies the GC, and moves the lead to
+// 'lost'. It is terminal and collects no payment (D6).
 const TRANSITIONS: Record<string, string[]> = {
   draft: ["sent", "withdrawn"],
-  sent: ["viewed", "expired", "withdrawn"],
-  viewed: ["accepted", "expired", "withdrawn"],
+  sent: ["viewed", "accepted", "declined", "expired", "withdrawn"],
+  viewed: ["accepted", "declined", "expired", "withdrawn"],
   accepted: [],
+  declined: [],
   expired: [],
   withdrawn: [],
 };
@@ -19,11 +22,6 @@ const TRANSITIONS: Record<string, string[]> = {
 export class ProposalStateError extends Error {}
 
 function assertTransition(from: string, to: string): void {
-  if (to === "declined") {
-    throw new ProposalStateError(
-      "decline path is undefined (US-026 parked) — no workflow may transition to 'declined'"
-    );
-  }
   if (!TRANSITIONS[from]?.includes(to)) {
     throw new ProposalStateError(`illegal proposal transition ${from} → ${to}`);
   }
@@ -228,6 +226,180 @@ export async function acceptProposal(rawToken: string): Promise<{ accepted: bool
     );
     await client.query("COMMIT");
     return { accepted: true };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * US-026 (defined in Gap 7): the buyer declines. Terminal, no payment (D6).
+ * Records the reason, notifies the GC, and moves the lead to 'lost'.
+ * Idempotent: declining a declined proposal returns without change.
+ */
+export async function declineProposal(
+  rawToken: string,
+  reason?: string
+): Promise<{ declined: boolean } | null> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const t = (
+      await client.query(
+        `SELECT t.id AS token_id, t.proposal_id, t.org_id, p.status, p.project_id
+         FROM proposal_access_tokens t
+         JOIN proposals p ON p.id = t.proposal_id AND p.deleted_at IS NULL
+         WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND t.expires_at > now()
+           AND t.deleted_at IS NULL
+         FOR UPDATE OF p`,
+        [hashToken(rawToken)]
+      )
+    ).rows[0];
+    if (!t) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+    if (t.status === "declined") {
+      await client.query("COMMIT");
+      return { declined: true };
+    }
+    assertTransition(t.status, "declined");
+
+    await client.query(`UPDATE proposals SET status = 'declined' WHERE id = $1`, [t.proposal_id]);
+    await client.query(
+      `INSERT INTO proposal_events (org_id, proposal_id, event, actor_kind, actor_token_id, meta)
+       VALUES ($1, $2, 'declined', 'buyer_token', $3, $4)`,
+      [t.org_id, t.proposal_id, t.token_id, JSON.stringify({ reason: reason ?? null })]
+    );
+    // Move the lead to 'lost' so the GC's pipeline reflects reality.
+    if (t.project_id) {
+      await client.query(
+        `UPDATE intake_submissions SET pipeline_stage = 'lost', pipeline_updated_at = now()
+         WHERE project_id = $1 AND org_id = $2`,
+        [t.project_id, t.org_id]
+      );
+    }
+    // Notify the GC in-platform.
+    await client.query(
+      `INSERT INTO notifications (org_id, user_id, kind, subject_table, subject_id, title, body)
+       SELECT m.org_id, m.user_id, 'proposal_declined', 'proposals', $2,
+              'Bid declined', $3
+       FROM org_memberships m
+       WHERE m.org_id = $1 AND m.is_active AND m.deleted_at IS NULL
+         AND m.role IN ('owner_admin','project_manager')`,
+      [t.org_id, t.proposal_id, reason ? `Reason: ${reason}` : "No reason given"]
+    );
+    await client.query("COMMIT");
+    return { declined: true };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+export interface ProposalRow {
+  id: string;
+  status: string;
+  recipient_email: string | null;
+  project_name: string;
+  submission_id: string | null;
+  grand_total: string;
+  sent_at: string | null;
+  accepted_at: string | null;
+}
+
+export async function listProposals(orgId: string): Promise<ProposalRow[]> {
+  const r = await getPool().query(
+    `SELECT p.id, p.status, p.recipient_email, pr.name AS project_name,
+            e.intake_submission_id AS submission_id, v.grand_total,
+            p.sent_at, p.accepted_at
+     FROM proposals p
+     JOIN estimate_versions v ON v.id = p.estimate_version_id
+     JOIN estimates e ON e.id = v.estimate_id
+     JOIN projects pr ON pr.id = p.project_id
+     WHERE p.org_id = $1 AND p.deleted_at IS NULL
+     ORDER BY p.created_at DESC`,
+    [orgId]
+  );
+  return r.rows;
+}
+
+/** Resend: revoke the old token, mint a new one. Only for live proposals. */
+export async function resendProposal(
+  orgId: string,
+  proposalId: string,
+  expiresDays = 30
+): Promise<{ rawToken: string } | null> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const p = (
+      await client.query(
+        `SELECT id, status FROM proposals WHERE id = $1 AND org_id = $2 AND deleted_at IS NULL FOR UPDATE`,
+        [proposalId, orgId]
+      )
+    ).rows[0];
+    if (!p || !["sent", "viewed"].includes(p.status)) {
+      await client.query("ROLLBACK");
+      return null;
+    }
+    await client.query(
+      `UPDATE proposal_access_tokens SET revoked_at = now() WHERE proposal_id = $1 AND revoked_at IS NULL`,
+      [proposalId]
+    );
+    const rawToken = randomBytes(24).toString("base64url");
+    await client.query(
+      `INSERT INTO proposal_access_tokens (org_id, proposal_id, token_hash, expires_at)
+       VALUES ($1, $2, $3, now() + make_interval(days => $4))`,
+      [orgId, proposalId, hashToken(rawToken), expiresDays]
+    );
+    await client.query("COMMIT");
+    return { rawToken };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/** Withdraw a live proposal; revokes its tokens. */
+export async function withdrawProposal(orgId: string, proposalId: string): Promise<boolean> {
+  const client = await getPool().connect();
+  try {
+    await client.query("BEGIN");
+    const p = (
+      await client.query(
+        `SELECT status FROM proposals WHERE id = $1 AND org_id = $2 AND deleted_at IS NULL FOR UPDATE`,
+        [proposalId, orgId]
+      )
+    ).rows[0];
+    if (!p) {
+      await client.query("ROLLBACK");
+      return false;
+    }
+    try {
+      assertTransition(p.status, "withdrawn");
+    } catch {
+      await client.query("ROLLBACK");
+      return false;
+    }
+    await client.query(`UPDATE proposals SET status = 'withdrawn' WHERE id = $1`, [proposalId]);
+    await client.query(
+      `UPDATE proposal_access_tokens SET revoked_at = now() WHERE proposal_id = $1 AND revoked_at IS NULL`,
+      [proposalId]
+    );
+    await client.query(
+      `INSERT INTO proposal_events (org_id, proposal_id, event, actor_kind)
+       VALUES ($1, $2, 'withdrawn', 'gc_user')`,
+      [orgId, proposalId]
+    );
+    await client.query("COMMIT");
+    return true;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;

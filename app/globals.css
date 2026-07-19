@@ -649,3 +649,16 @@ legend {
   color: #15803d;
   font-weight: 700;
 }
+
+/* Proposals + decline (Gap 7) */
+.gci-buyer-actions { display: flex; align-items: center; gap: 16px; }
+.gci-declinebtn {
+  min-height: 44px; padding: 0 16px; background: #fff; border: 1px solid #b91c1c;
+  color: #b91c1c; border-radius: 8px; font-weight: 700; cursor: pointer;
+}
+.gci-declined { font-size: 16px; font-weight: 700; color: #b91c1c; }
+.gci-proposal-actions { display: flex; gap: 12px; margin-top: 6px; }
+.gci-status { font-weight: 700; }
+.gci-status-accepted { color: #15803d; }
+.gci-status-declined, .gci-status-withdrawn, .gci-status-expired { color: #b91c1c; }
+.gci-status-viewed { color: var(--gci-accent); }

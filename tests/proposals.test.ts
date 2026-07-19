@@ -125,7 +125,7 @@ d("EP-05 proposal engine", () => {
     ).rejects.toThrow(/locked/);
   });
 
-  it("guards the machine: no skipping states, no undefined decline, bad/expired tokens rejected", async () => {
+  it("guards the machine: illegal transitions and bad/expired tokens rejected", async () => {
     const versionId = await draftEstimate("p3@prop-test.example");
     const { proposalId } = await createProposal({
       estimateVersionId: versionId,
