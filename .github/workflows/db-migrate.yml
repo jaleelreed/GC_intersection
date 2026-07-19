@@ -3,6 +3,11 @@ name: db-migrate
 # Migrates + seeds the real (Neon) database using the DATABASE_URL repository
 # secret — the connection string never exists as a file anywhere. Runs on
 # demand, and automatically when a migration lands on main.
+#
+# Safety: a `validate` job first applies ALL migrations from scratch against a
+# throwaway Postgres (proving they apply cleanly and the smoke tests pass);
+# only then does `migrate` touch Neon. A broken migration fails validate and
+# never reaches production.
 on:
   workflow_dispatch:
   push:
@@ -14,7 +19,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: gc
+          POSTGRES_PASSWORD: gc
+          POSTGRES_DB: gc_migrate_validate
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U gc"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://gc:gc@localhost:5432/gc_migrate_validate
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: migrations apply cleanly from scratch
+        run: |
+          npm run db:migrate
+          npm run db:seed
+      - name: smoke tests against the freshly-migrated schema
+        run: npx vitest run tests/db.smoke.test.ts
+
   migrate:
+    needs: validate
     runs-on: ubuntu-latest
     env:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
