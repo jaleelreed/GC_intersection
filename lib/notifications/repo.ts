@@ -1,6 +1,6 @@
 // US-008: in-platform notification inbox. audit_log is not an inbox.
 import type { PoolClient } from "pg";
-import { getPool } from "../db";
+import { orgQuery } from "../db";
 
 export interface NotificationRow {
   id: string;
@@ -15,8 +15,8 @@ export interface NotificationRow {
 
 /**
  * Fans out one notification per active owner_admin / project_manager
- * membership of the org. Runs inside the caller's transaction when a client
- * is passed (US-007 conversion), standalone otherwise.
+ * membership of the org. Runs inside the caller's transaction; the caller
+ * MUST have set app.org_id on the client (notifications is FORCE RLS).
  */
 export async function notifyOrg(
   db: PoolClient,
@@ -39,7 +39,8 @@ export async function inbox(
   userId: string,
   opts: { unreadOnly?: boolean; limit?: number } = {}
 ): Promise<NotificationRow[]> {
-  const r = await getPool().query(
+  const r = await orgQuery<NotificationRow>(
+    orgId,
     `SELECT id, kind, subject_table, subject_id, title, body, read_at, created_at
      FROM notifications
      WHERE org_id = $1 AND user_id = $2 AND deleted_at IS NULL
@@ -51,8 +52,9 @@ export async function inbox(
   return r.rows;
 }
 
-export async function markRead(id: string, userId: string): Promise<boolean> {
-  const r = await getPool().query(
+export async function markRead(orgId: string, id: string, userId: string): Promise<boolean> {
+  const r = await orgQuery(
+    orgId,
     `UPDATE notifications SET read_at = now()
      WHERE id = $1 AND user_id = $2 AND read_at IS NULL AND deleted_at IS NULL`,
     [id, userId]

@@ -11,7 +11,7 @@ import {
   listProposals,
 } from "../lib/proposals/repo";
 import { currentEstimateForLead } from "../lib/estimate/read";
-import { getPool } from "../lib/db";
+import { getPool, orgQuery } from "../lib/db";
 import { validPayload } from "./intake.schema.test";
 import { cleanupSubmissions } from "./helpers/cleanup";
 
@@ -35,11 +35,11 @@ d("proposal management + decline", () => {
       DELETE FROM proposals WHERE estimate_version_id IN (
         SELECT v.id FROM estimate_versions v JOIN estimates e ON e.id = v.estimate_id
         JOIN intake_submissions s ON s.id = e.intake_submission_id WHERE s.contact_email LIKE '%@mgmt-test.example')`);
-    await pool.query(`
-      DELETE FROM notifications WHERE kind = 'proposal_declined' AND subject_id IN (
+    await orgQuery(ORG, `
+      DELETE FROM notifications WHERE org_id = $1 AND kind = 'proposal_declined' AND subject_id IN (
         SELECT p.id FROM proposals p JOIN estimate_versions v ON v.id = p.estimate_version_id
         JOIN estimates e ON e.id = v.estimate_id JOIN intake_submissions s ON s.id = e.intake_submission_id
-        WHERE s.contact_email LIKE '%@mgmt-test.example')`);
+        WHERE s.contact_email LIKE '%@mgmt-test.example')`, [ORG]);
     await cleanupSubmissions(pool, "%@mgmt-test.example");
     await pool.end();
   });
@@ -72,7 +72,7 @@ d("proposal management + decline", () => {
     expect(status).toBe("declined");
     const stage = (await getPool().query(`SELECT pipeline_stage FROM intake_submissions WHERE id = $1`, [submissionId])).rows[0].pipeline_stage;
     expect(stage).toBe("lost");
-    const notes = (await getPool().query(`SELECT count(*)::int AS n FROM notifications WHERE kind = 'proposal_declined' AND subject_id = $1`, [proposalId])).rows[0].n;
+    const notes = (await orgQuery(ORG, `SELECT count(*)::int AS n FROM notifications WHERE kind = 'proposal_declined' AND subject_id = $1`, [proposalId])).rows[0].n;
     expect(notes).toBeGreaterThanOrEqual(1);
   });
 

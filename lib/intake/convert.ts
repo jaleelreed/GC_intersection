@@ -3,7 +3,7 @@
 // estimate (US-011) attaches here when EP-02 lands — estimate_id stays null
 // until then, and the submission still converts.
 import type { PoolClient } from "pg";
-import { getPool } from "../db";
+import { getPool, setOrg } from "../db";
 import { SCOPE_TOGGLE_KEYS } from "./schema";
 import { notifyOrg } from "../notifications/repo";
 import { extractAndStoreHints } from "./hints";
@@ -80,6 +80,10 @@ export async function convertSubmission(submissionId: string): Promise<string | 
       await client.query("ROLLBACK");
       return null; // spam / discarded never convert
     }
+
+    // Now that we know the org, scope the rest of the transaction for RLS
+    // (notifications is FORCE RLS; notifyOrg writes it below).
+    await setOrg(client, sub.org_id);
 
     // projects has UNIQUE (org_id, code); serialize allocation per org so
     // concurrent conversions can't compute the same sequence number. The

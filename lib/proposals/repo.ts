@@ -3,7 +3,7 @@
 // and THE D7 FREEZE: acceptance locks the estimate version at the database
 // layer (US-025). D6: no payment objects exist, by design.
 import { createHash, randomBytes } from "node:crypto";
-import { getPool } from "../db";
+import { getPool, setOrg } from "../db";
 
 // US-018/US-026: the machine. Decline is now DEFINED (Gap 7): a buyer may
 // decline a proposal they have received (sent) or viewed; declining records
@@ -281,7 +281,8 @@ export async function declineProposal(
         [t.project_id, t.org_id]
       );
     }
-    // Notify the GC in-platform.
+    // Notify the GC in-platform (notifications is FORCE RLS — scope first).
+    await setOrg(client, t.org_id);
     await client.query(
       `INSERT INTO notifications (org_id, user_id, kind, subject_table, subject_id, title, body)
        SELECT m.org_id, m.user_id, 'proposal_declined', 'proposals', $2,
