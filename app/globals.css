@@ -692,3 +692,15 @@ legend {
 .gci-disclaimer { margin-top: 20px; padding: 12px; border: 1px solid var(--gci-border); border-radius: 8px; }
 .gci-danger { margin-top: 20px; padding: 14px; border: 1.5px solid #b91c1c; border-radius: 10px; }
 .gci-danger h3 { margin: 0 0 6px; color: #b91c1c; }
+
+/* Estimate depth: history + coverage */
+.gci-coverage {
+  border: 1.5px solid #b45309;
+  background: #fff7ed;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin: 12px 0;
+}
+.gci-history { margin-top: 24px; }
+.gci-vlist { list-style: none; padding: 0; }
+.gci-vlist li { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gci-border); font-variant-numeric: tabular-nums; }

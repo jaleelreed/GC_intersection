@@ -7,6 +7,8 @@ import { SendBid } from "../../../../components/estimate/SendBid";
 import { StageControl } from "../../../../components/leads/StageControl";
 import { LeadNotes } from "../../../../components/leads/LeadNotes";
 import { listNotes, type LeadStage } from "../../../../lib/leads/repo";
+import { listVersions, coverageGaps } from "../../../../lib/estimate/read";
+import { VersionHistory } from "../../../../components/estimate/VersionHistory";
 
 export const dynamic = "force-dynamic";
 
@@ -46,6 +48,8 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
   ).filter(([, v]) => v.on);
   const drivers = ((sub.swing_drivers ?? []) as { driver: string; widen_amount_pct: number }[]).slice(0, 3);
   const notes = await listNotes(ws.orgId, id);
+  const versions = sub.estimate_id ? await listVersions(sub.estimate_id, ws.orgId) : [];
+  const gaps = await coverageGaps(id, ws.orgId);
 
   return (
     <main className="gci-page">
@@ -54,6 +58,15 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
       </p>
 
       <StageControl leadId={id} stage={sub.pipeline_stage as LeadStage} />
+
+      {gaps.length > 0 && (
+        <div className="gci-coverage" role="alert">
+          <strong>Coverage gap:</strong> the homeowner asked for{" "}
+          {gaps.join(", ")} but the draft has no priced line for{" "}
+          {gaps.length === 1 ? "it" : "them"}. Add {gaps.length === 1 ? "a line" : "lines"} in
+          the editor, or note the exclusion, before you send.
+        </div>
+      )}
 
       <h1>
         {sub.address_line1}, {sub.city}
@@ -122,6 +135,8 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
           </ul>
         </section>
       )}
+
+      <VersionHistory versions={versions} />
 
       <LeadNotes leadId={id} initial={notes} />
     </main>

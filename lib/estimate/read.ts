@@ -53,6 +53,65 @@ export async function costCodeOptions(orgId: string): Promise<CostCodeOption[]> 
   return r.rows;
 }
 
+export interface VersionRow {
+  id: string;
+  version_no: number;
+  label: string | null;
+  grand_total: string;
+  created_at: string;
+  is_current: boolean;
+  locked: boolean;
+}
+
+export async function listVersions(estimateId: string, orgId: string): Promise<VersionRow[]> {
+  const r = await getPool().query(
+    `SELECT v.id, v.version_no, v.label, v.grand_total, v.created_at,
+            (v.id = e.current_version_id) AS is_current,
+            (v.locked_at IS NOT NULL) AS locked
+     FROM estimate_versions v
+     JOIN estimates e ON e.id = v.estimate_id
+     WHERE v.estimate_id = $1 AND e.org_id = $2 AND v.deleted_at IS NULL
+     ORDER BY v.version_no DESC`,
+    [estimateId, orgId]
+  );
+  return r.rows;
+}
+
+/**
+ * Coverage check (F-4.6): scope toggles the homeowner turned on that produced
+ * no priced line in the current estimate — work named but not yet priced.
+ */
+export async function coverageGaps(submissionId: string, orgId: string): Promise<string[]> {
+  const head = (
+    await getPool().query(
+      `SELECT s.scope_toggles, e.current_version_id
+       FROM intake_submissions s
+       LEFT JOIN estimates e ON e.id = s.estimate_id
+       WHERE s.id = $1 AND s.org_id = $2`,
+      [submissionId, orgId]
+    )
+  ).rows[0];
+  if (!head?.current_version_id) return [];
+  const onToggles = Object.entries(
+    (head.scope_toggles ?? {}) as Record<string, { on: boolean }>
+  )
+    .filter(([, v]) => v.on)
+    .map(([k]) => k);
+  if (onToggles.length === 0) return [];
+
+  const covered = (
+    await getPool().query(
+      `SELECT DISTINCT m.scope_toggle
+       FROM estimate_lines l
+       JOIN scope_assembly_map m ON m.assembly_id = l.assembly_id AND m.deleted_at IS NULL
+       WHERE l.estimate_version_id = $1 AND l.deleted_at IS NULL`,
+      [head.current_version_id]
+    )
+  ).rows.map((r) => r.scope_toggle);
+
+  return onToggles.filter((t) => !covered.includes(t));
+}
+
 export async function currentEstimateForLead(
   submissionId: string,
   orgId: string
