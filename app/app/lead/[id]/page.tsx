@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { currentUserEmail } from "../../../../lib/auth/server";
 import { resolveWorkspace } from "../../../../lib/workspace";
 import { getPool } from "../../../../lib/db";
+import { SendBid } from "../../../../components/estimate/SendBid";
 
 export const dynamic = "force-dynamic";
 
@@ -76,6 +77,11 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
               Edit to your prices →
             </a>
           </p>
+          <SendBid
+            versionId={sub.version_id}
+            defaultName={sub.contact_name ?? ""}
+            defaultEmail={sub.contact_email ?? ""}
+          />
         </>
       ) : (
         <p className="gci-errors">
