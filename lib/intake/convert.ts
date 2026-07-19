@@ -5,6 +5,7 @@
 import type { PoolClient } from "pg";
 import { getPool } from "../db";
 import { SCOPE_TOGGLE_KEYS } from "./schema";
+import { notifyOrg } from "../notifications/repo";
 
 const TOGGLE_LABELS: Record<string, string> = {
   bath: "bath",
@@ -50,7 +51,7 @@ export async function convertSubmission(submissionId: string): Promise<string | 
 
     const sub = (
       await client.query(
-        `SELECT id, org_id, status, project_id, address_line1, address_line2,
+        `SELECT id, org_id, status, project_id, channel, address_line1, address_line2,
                 city, state, postal_code, county_fips, square_footage, scope_toggles
          FROM intake_submissions
          WHERE id = $1 AND deleted_at IS NULL
@@ -72,6 +73,10 @@ export async function convertSubmission(submissionId: string): Promise<string | 
       return null; // spam / discarded never convert
     }
 
+    // projects has UNIQUE (org_id, code); serialize allocation per org so
+    // concurrent conversions can't compute the same sequence number. The
+    // advisory lock releases at COMMIT/ROLLBACK.
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [sub.org_id]);
     const code = await nextProjectCode(client, sub.org_id, new Date().getFullYear());
     const name = buildProjectName(sub.address_line1, sub.scope_toggles);
 
@@ -102,6 +107,17 @@ export async function convertSubmission(submissionId: string): Promise<string | 
       `UPDATE intake_submissions SET status = 'converted', project_id = $2 WHERE id = $1`,
       [submissionId, project.id]
     );
+
+    // US-008: the GC finds out in-platform, same transaction as the
+    // conversion — a converted lead without a notification cannot exist.
+    // Body gains the range + swing drivers when US-011 attaches here.
+    await notifyOrg(client, sub.org_id, {
+      kind: "intake_received",
+      subject_table: "intake_submissions",
+      subject_id: submissionId,
+      title: `New lead: ${sub.address_line1}`,
+      body: `${name} · via ${sub.channel ?? "link"}`,
+    });
 
     await client.query("COMMIT");
     return project.id;

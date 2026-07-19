@@ -88,8 +88,11 @@ d("US-007 auto-create", () => {
         [[id1, id2]]
       )
     ).rows.map((r) => r.code);
+    // Parallel test workers convert concurrently, so neighbors may take
+    // intermediate numbers — assert strict increase, not adjacency.
+    expect(codes.length).toBe(2);
     const seq = (c: string) => Number(c.split("-")[2]);
-    expect(seq(codes[1])).toBe(seq(codes[0]) + 1);
+    expect(seq(codes[1])).toBeGreaterThan(seq(codes[0]));
   });
 
   it("is idempotent: replaying returns the same project", async () => {
