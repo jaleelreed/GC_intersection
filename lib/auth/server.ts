@@ -27,6 +27,21 @@ export async function getAuth(): Promise<NeonAuth> {
 }
 
 export async function currentUserEmail(): Promise<{ email: string; name: string | null } | null> {
+  // E2E auth bypass — ONLY when E2E_AUTH_SECRET is set (the CI e2e job); never
+  // set in production, so this path is inert there. Lets Playwright exercise
+  // the authenticated journeys that OTP can't automate.
+  if (process.env.E2E_AUTH_SECRET) {
+    try {
+      const { cookies } = await import("next/headers");
+      const c = await cookies();
+      if (c.get("e2e_auth")?.value === process.env.E2E_AUTH_SECRET) {
+        const email = c.get("e2e_email")?.value;
+        if (email) return { email, name: "E2E User" };
+      }
+    } catch {
+      /* not in a request context — fall through */
+    }
+  }
   try {
     const auth = await getAuth();
     const { data } = await auth.getSession();
