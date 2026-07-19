@@ -25,7 +25,8 @@ export async function findActiveLink(slug: string): Promise<IntakeLink | null> {
 export async function insertSubmission(
   link: IntakeLink,
   input: IntakeSubmissionInput,
-  status: "submitted" | "spam"
+  status: "submitted" | "spam",
+  derived: { county_fips?: string | null; enrichment_snapshot_id?: string | null } = {}
 ): Promise<{ id: string }> {
   const r = await getPool().query(
     `INSERT INTO intake_submissions (
@@ -33,8 +34,9 @@ export async function insertSubmission(
        contact_name, contact_email, contact_phone,
        address_line1, address_line2, city, state, postal_code,
        square_footage, existing_config, target_config, conditions,
-       scope_toggles, structural_flags, finish_tier, narrative
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+       scope_toggles, structural_flags, finish_tier, narrative,
+       county_fips, enrichment_snapshot_id
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
      RETURNING id`,
     [
       link.org_id,
@@ -57,6 +59,8 @@ export async function insertSubmission(
       JSON.stringify(input.structural_flags),
       input.finish_tier,
       input.narrative,
+      derived.county_fips ?? null,
+      derived.enrichment_snapshot_id ?? null,
     ]
   );
   return { id: r.rows[0].id };
