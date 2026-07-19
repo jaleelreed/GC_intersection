@@ -1,22 +1,10 @@
 // Gap 2: the lead pipeline. A lead is an intake submission viewed as sales
 // work — a stage, notes, follow-up. Org-scoped throughout.
 import { getPool } from "../db";
+import { LEAD_STAGES, type LeadStage, type LeadRow, type LeadNote } from "./types";
 
-export const LEAD_STAGES = ["new", "contacted", "quoted", "won", "lost"] as const;
-export type LeadStage = (typeof LEAD_STAGES)[number];
-
-export interface LeadRow {
-  id: string;
-  address_line1: string;
-  city: string;
-  channel: string;
-  contact_name: string | null;
-  pipeline_stage: LeadStage;
-  submitted_at: string;
-  grand_total: string | null;
-  range_low: string | null;
-  range_high: string | null;
-}
+export { LEAD_STAGES };
+export type { LeadStage, LeadRow, LeadNote };
 
 export async function listLeads(
   orgId: string,
@@ -57,12 +45,6 @@ export async function setStage(orgId: string, submissionId: string, stage: LeadS
     [orgId, submissionId, stage]
   );
   return (r.rowCount ?? 0) > 0;
-}
-
-export interface LeadNote {
-  id: string;
-  body: string;
-  created_at: string;
 }
 
 export async function listNotes(orgId: string, submissionId: string): Promise<LeadNote[]> {

@@ -1,7 +1,7 @@
 "use client";
 // Per-lead notes: append-only, newest first.
 import { useState } from "react";
-import type { LeadNote } from "../../lib/leads/repo";
+import type { LeadNote } from "../../lib/leads/types";
 
 export function LeadNotes({ leadId, initial }: { leadId: string; initial: LeadNote[] }) {
   const [notes, setNotes] = useState<LeadNote[]>(initial);

@@ -2,7 +2,7 @@
 // Per-lead stage control (new → contacted → quoted → won/lost).
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { LEAD_STAGES, type LeadStage } from "../../lib/leads/repo";
+import { LEAD_STAGES, type LeadStage } from "../../lib/leads/types";
 
 const LABEL: Record<LeadStage, string> = {
   new: "New",
