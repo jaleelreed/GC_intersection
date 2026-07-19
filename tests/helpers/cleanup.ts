@@ -42,10 +42,13 @@ export async function cleanupSubmissions(pool: Pool, emailPattern: string): Prom
        SELECT id FROM intake_submissions WHERE contact_email LIKE $1)`,
     [emailPattern]
   );
-  await pool.query(`DELETE FROM intake_submissions WHERE contact_email LIKE $1`, [emailPattern]);
-  if (snapshotIds.length) {
-    await pool.query(`DELETE FROM enrichment_snapshots WHERE id = ANY($1)`, [snapshotIds]);
-  }
+  // Circular FKs: submissions.estimate_id → estimates AND
+  // estimates.intake_submission_id → submissions. Null the pointer, delete
+  // the estimate chain, THEN the submissions.
+  await pool.query(
+    `UPDATE intake_submissions SET estimate_id = NULL WHERE contact_email LIKE $1`,
+    [emailPattern]
+  );
   if (estimateIds.length) {
     await pool.query(
       `DELETE FROM estimate_lines WHERE estimate_version_id IN (
@@ -60,6 +63,10 @@ export async function cleanupSubmissions(pool: Pool, emailPattern: string): Prom
     await pool.query(`UPDATE estimates SET current_version_id = NULL WHERE id = ANY($1)`, [estimateIds]);
     await pool.query(`DELETE FROM estimate_versions WHERE estimate_id = ANY($1)`, [estimateIds]);
     await pool.query(`DELETE FROM estimates WHERE id = ANY($1)`, [estimateIds]);
+  }
+  await pool.query(`DELETE FROM intake_submissions WHERE contact_email LIKE $1`, [emailPattern]);
+  if (snapshotIds.length) {
+    await pool.query(`DELETE FROM enrichment_snapshots WHERE id = ANY($1)`, [snapshotIds]);
   }
   if (projectIds.length) {
     await pool.query(`DELETE FROM ai_jobs WHERE project_id = ANY($1)`, [projectIds]);
