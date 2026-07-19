@@ -20,10 +20,9 @@ export default async function EditEstimatePage({ params }: { params: Promise<{ i
 
   return (
     <main className="gci-page gci-wide">
-      <header className="gci-chrome">
-        <span className="gci-gc-name">{ws.orgName}</span>
+      <p className="gci-back">
         <Link href={`/app/lead/${id}`}>← Lead</Link>
-      </header>
+      </p>
       <h1>Edit estimate</h1>
       <p className="gci-hint">
         {estimate.addressLine1} · v{estimate.versionNo}

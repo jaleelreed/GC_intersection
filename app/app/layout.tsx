@@ -1,12 +1,24 @@
-// The GC platform shell: server-side session guard on every /app route.
+// The GC platform shell: session guard + persistent workspace nav on every
+// /app route. The nav lives here so no page has to re-render it.
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { currentUserEmail } from "../../lib/auth/server";
+import { resolveWorkspace } from "../../lib/workspace";
+import { ensureWorkspace } from "../../lib/onboarding/provision";
+import { AppNav } from "../../components/app/AppNav";
 
 export const dynamic = "force-dynamic";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const user = await currentUserEmail();
   if (!user) redirect("/auth/sign-in");
-  return <>{children}</>;
+  // Workspace always exists past the door (provision as a safety net).
+  const ws = (await resolveWorkspace(user.email)) ?? (await ensureWorkspace(user.email, user.name));
+
+  return (
+    <div className="gci-app">
+      <AppNav orgName={ws.orgName} email={user.email} />
+      {children}
+    </div>
+  );
 }
