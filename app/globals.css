@@ -353,3 +353,39 @@ legend {
   font-weight: 700;
   color: var(--gci-accent);
 }
+
+/* Send bid + buyer accept (US-017/024/025) */
+.gci-sendbox {
+  border: 1px solid var(--gci-border);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 20px;
+}
+.gci-copyrow {
+  display: flex;
+  gap: 8px;
+}
+.gci-copyrow input {
+  flex: 1;
+  padding: 10px;
+  font-size: 14px;
+  border: 1px solid var(--gci-border);
+  border-radius: 6px;
+}
+.gci-sendbox .gci-primary,
+.gci-copyrow .gci-primary {
+  min-height: 44px;
+  padding: 0 18px;
+  background: var(--gci-accent);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gci-accepted {
+  font-size: 18px;
+  font-weight: 700;
+  color: #15803d;
+}
