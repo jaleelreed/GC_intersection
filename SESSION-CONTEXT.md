@@ -61,6 +61,12 @@ Session queue: B2 architecture (`spec-architecture` — confirm stack + ADR; rat
   unblocked; §2's "ADR-2, still open" and the parked-list entry "US-005c full enrichment"
   are superseded by this line.
 
+- **2026-07-19 — US-026 decline path DEFINED** (Gap 7; unparks the decline story).
+  A buyer may decline a proposal they've received or viewed: it records the state + an
+  optional reason, notifies the GC in-platform, and moves the lead's pipeline stage to
+  `lost`. Terminal, collects no payment (D6). Supersedes the "decline behavior undefined"
+  parking in §2 and build-plan-v2 §5.
+
 ## 6. What this session should do
 
 State which session you are (B2 / skeleton / contracts / design / build US-00N). If unstated, assume the next unstarted item in the queue above. Restate the relevant contract from build-plan.md as amended by §2 of this file, then proceed per the loop.
