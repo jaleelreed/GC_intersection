@@ -54,3 +54,19 @@ export function tooMany(): Response {
     { status: 429, headers: { "retry-after": "60" } }
   );
 }
+
+/**
+ * Route-level guard: returns a 429 Response when over the limit, else null.
+ * No-op in the test environment (the suite hits public routes far faster than
+ * a real client would); checkRateLimit itself is tested directly.
+ */
+export async function rateGuard(
+  req: Request,
+  route: string,
+  limit: number,
+  windowSec: number
+): Promise<Response | null> {
+  if (process.env.NODE_ENV === "test") return null;
+  const { allowed } = await checkRateLimit(route, clientKey(req), limit, windowSec, Date.now());
+  return allowed ? null : tooMany();
+}

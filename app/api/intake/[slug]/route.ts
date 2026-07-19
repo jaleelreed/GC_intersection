@@ -3,7 +3,7 @@
 import { intakeSubmissionSchema, isSpam } from "../../../../lib/intake/schema";
 import { findActiveLink, insertSubmission } from "../../../../lib/intake/repo";
 import { convertSubmission } from "../../../../lib/intake/convert";
-import { checkRateLimit, clientKey, tooMany } from "../../../../lib/ratelimit";
+import { rateGuard } from "../../../../lib/ratelimit";
 import { captureError } from "../../../../lib/monitor";
 import { deriveCountyFips } from "../../../../lib/enrichment/county";
 import { FixtureEnrichmentProvider } from "../../../../lib/enrichment/provider";
@@ -18,8 +18,8 @@ export async function POST(
   req: Request,
   ctx: { params: Promise<{ slug: string }> }
 ) {
-  const rl = await checkRateLimit("intake", clientKey(req), 20, 60, Date.now());
-  if (!rl.allowed) return tooMany();
+  const limited = await rateGuard(req, "intake", 20, 60);
+  if (limited) return limited;
 
   const { slug } = await ctx.params;
 
