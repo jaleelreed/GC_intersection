@@ -6,7 +6,9 @@ import { getPool } from "../lib/db";
 const d = describe.skipIf(!process.env.DATABASE_URL);
 
 d("checkRateLimit", () => {
-  const now = 1_700_000_000_000; // fixed instant so the window bucket is stable
+  // Real now so expires_at is in the future (a past timestamp would be swept
+  // by the opportunistic cleanup); the 4 calls share one 60s window bucket.
+  const now = Date.now();
   const client = `test-${now}`;
 
   afterAll(async () => {
