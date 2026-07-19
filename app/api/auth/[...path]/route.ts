@@ -7,7 +7,7 @@ import { getAuth } from "../../../../lib/auth/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type Ctx = { params: Promise<{ all: string[] }> };
+type Ctx = { params: Promise<{ path: string[] }> };
 
 export async function GET(request: Request, ctx: Ctx) {
   return getAuth().handler().GET(request, ctx as never);
