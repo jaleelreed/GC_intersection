@@ -1,9 +1,10 @@
-// US-024: the buyer's view of the bid. Public, token-authorized, no account.
-// First view transitions the proposal to 'viewed'. Carries the product
-// fingerprint (D12).
+// US-024/016: the buyer's bid document. Public, token-authorized, no account.
+// First view transitions to 'viewed'. Line-item detail, print-optimized
+// (Save as PDF), carries the product fingerprint (D12).
 import { notFound } from "next/navigation";
-import { getProposalByToken } from "../../../lib/proposals/repo";
+import { getProposalByToken, bidLinesForToken } from "../../../lib/proposals/repo";
 import { AcceptBid } from "../../../components/proposal/AcceptBid";
+import { PrintButton } from "../../../components/proposal/PrintButton";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,27 +15,43 @@ export default async function BuyerProposalPage({ params }: { params: Promise<{ 
   const { token } = await params;
   const view = await getProposalByToken(token);
   if (!view) notFound();
+  const lines = await bidLinesForToken(token);
 
   return (
-    <main className="gci-page">
+    <main className="gci-page gci-bid">
       <header className="gci-chrome">
-        <span className="gci-gc-name">{view.projectName}</span>
-        <span className="gci-powered">via GC_intersection</span>
+        <span className="gci-gc-name">{view.orgName}</span>
+        <PrintButton />
       </header>
 
-      <h1>Your estimate</h1>
+      <h1>Estimate for {view.projectName}</h1>
       {view.recipientName && <p className="gci-hint">Prepared for {view.recipientName}</p>}
+
+      {lines.length > 0 && (
+        <table className="gci-bidlines">
+          <tbody>
+            {lines.map((l, i) => (
+              <tr key={i}>
+                <td>{l.description}</td>
+                <td className="num">{money(l.total)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
 
       <p className="gci-range">{money(view.grandTotal)}</p>
       {view.rangeLow != null && view.rangeHigh != null && (
-        <p className="gci-hint">
-          Estimated range {money(view.rangeLow)} – {money(view.rangeHigh)}
-        </p>
+        <p className="gci-hint">Estimated range {money(view.rangeLow)} – {money(view.rangeHigh)}</p>
       )}
 
-      <div style={{ marginTop: 24 }}>
+      <div className="gci-accept-area">
         <AcceptBid token={token} initialStatus={view.status} />
       </div>
+
+      <footer className="gci-fingerprint">
+        Prepared with GC_intersection · gc-intersection.vercel.app
+      </footer>
     </main>
   );
 }

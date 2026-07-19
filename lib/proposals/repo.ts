@@ -100,6 +100,31 @@ export interface BuyerProposalView {
   rangeLow: string | null;
   rangeHigh: string | null;
   projectName: string;
+  orgName: string;
+  estimateVersionId: string;
+}
+
+export interface BidLine {
+  description: string;
+  total: string;
+}
+
+/**
+ * US-016: the bid's line items for the buyer document. Token-authorized (the
+ * token is the buyer's credential); returns owner-facing description + total,
+ * never cost-code internals. Read-only, no state change.
+ */
+export async function bidLinesForToken(rawToken: string): Promise<BidLine[]> {
+  const r = await getPool().query(
+    `SELECT l.description, l.total
+     FROM proposal_access_tokens t
+     JOIN proposals p ON p.id = t.proposal_id AND p.deleted_at IS NULL
+     JOIN estimate_lines l ON l.estimate_version_id = p.estimate_version_id AND l.deleted_at IS NULL
+     WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND t.expires_at > now() AND t.deleted_at IS NULL
+     ORDER BY l.sort_order`,
+    [hashToken(rawToken)]
+  );
+  return r.rows;
 }
 
 /** Resolves a raw token → proposal; first view transitions sent → viewed. */
@@ -110,11 +135,13 @@ export async function getProposalByToken(rawToken: string): Promise<BuyerProposa
     const t = (
       await client.query(
         `SELECT t.id AS token_id, t.proposal_id, t.org_id, p.status, p.recipient_name,
-                v.grand_total, v.range_low, v.range_high, pr.name AS project_name
+                p.estimate_version_id, v.grand_total, v.range_low, v.range_high,
+                pr.name AS project_name, o.name AS org_name
          FROM proposal_access_tokens t
          JOIN proposals p ON p.id = t.proposal_id AND p.deleted_at IS NULL
          JOIN estimate_versions v ON v.id = p.estimate_version_id
          JOIN projects pr ON pr.id = p.project_id
+         JOIN organizations o ON o.id = p.org_id
          WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND t.expires_at > now()
            AND t.deleted_at IS NULL
          FOR UPDATE OF p`,
@@ -145,6 +172,8 @@ export async function getProposalByToken(rawToken: string): Promise<BuyerProposa
       rangeLow: t.range_low,
       rangeHigh: t.range_high,
       projectName: t.project_name,
+      orgName: t.org_name,
+      estimateVersionId: t.estimate_version_id,
     };
   } catch (err) {
     await client.query("ROLLBACK");
