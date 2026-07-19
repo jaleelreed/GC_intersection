@@ -1,6 +1,7 @@
 // Fixed test account (US-004). Deterministic UUIDs so tests and fixtures can
 // reference them; idempotent so reseeding is safe.
 import { connect } from "./client.mjs";
+import { seedEstimating } from "./seed-estimating.mjs";
 
 export const TEST_ORG_ID = "00000000-0000-4000-8000-000000000001";
 export const TEST_USER_ID = "00000000-0000-4000-8000-000000000002";
@@ -68,8 +69,15 @@ try {
     );
   }
 
+  // EP-02: estimating fixtures (cost codes, market costs, assemblies, map,
+  // modifiers, markups) — the zero-setup answer to an empty cost database.
+  const est = await seedEstimating(client);
+
   await client.query("COMMIT");
-  console.log(`seeded fixed test account (org ${TEST_ORG_ID}) + ${LINKS.length} intake links`);
+  console.log(
+    `seeded fixed test account (org ${TEST_ORG_ID}) + ${LINKS.length} intake links + estimating fixtures ` +
+      JSON.stringify(est)
+  );
 } catch (err) {
   await client.query("ROLLBACK");
   console.error(`seed failed: ${err.message}`);
