@@ -123,11 +123,13 @@ export async function generateDraftEstimate(
     unit_cost: string;
     total: string;
     benchmark_unit_cost: string;
-    market_cost_item_id: string;
+    market_cost_item_id: string | null;
+    seed_source: string;
     totalScaled: Scaled;
   }[] = [];
   const assembliesFired: unknown[] = [];
   const modifiersApplied: unknown[] = [];
+  const precedenceLog: unknown[] = [];
   const appliedWiden = new Map<string, { pct: number; source: string }>();
   let countyFellBack = false;
 
@@ -190,6 +192,19 @@ export async function generateDraftEstimate(
       const qty = evaluateFormula(comp.quantity_formula, params);
       if (!(qty > 0)) continue;
 
+      // US-021 precedence: a learned org cost (harvested from this GC's own
+      // edits) ALWAYS beats the market seed for the same cost code.
+      const learned = (
+        await client.query(
+          `SELECT id, labor_unit_cost, material_unit_cost, equipment_unit_cost, sub_unit_cost
+           FROM cost_items
+           WHERE org_id = $1 AND cost_code_id = $2 AND source = 'harvested_bid'
+             AND source_observation_id IS NOT NULL AND deleted_at IS NULL
+           ORDER BY effective_date DESC, created_at DESC, id LIMIT 1`,
+          [sub.org_id, comp.cost_code_id]
+        )
+      ).rows[0];
+
       // market lookup: county → any fixture row (regional fallback, named).
       let market = sub.county_fips
         ? (
@@ -202,7 +217,7 @@ export async function generateDraftEstimate(
             )
           ).rows[0]
         : undefined;
-      if (!market) {
+      if (!market && !learned) {
         countyFellBack = true;
         market = (
           await client.query(
@@ -214,17 +229,26 @@ export async function generateDraftEstimate(
           )
         ).rows[0];
       }
-      if (!market) {
-        // No market row anywhere: the component is honestly unpriced.
+      const priced = learned ?? market;
+      if (!priced) {
+        // No learned cost and no market row anywhere: honestly unpriced.
         unpricedToggles.push(`${row.scope_toggle}:${comp.name}`);
         continue;
       }
+      const seedSource = learned ? "learned" : "market_seed";
+      precedenceLog.push({
+        cost_code_id: comp.cost_code_id,
+        component: comp.name,
+        winner: seedSource,
+        cost_item_id: learned?.id ?? null,
+        market_cost_item_id: learned ? null : market?.id ?? null,
+      });
 
       const rawUnit: Scaled =
-        toScaled(market.labor_unit_cost) +
-        toScaled(market.material_unit_cost) +
-        toScaled(market.equipment_unit_cost) +
-        toScaled(market.sub_unit_cost);
+        toScaled(priced.labor_unit_cost) +
+        toScaled(priced.material_unit_cost) +
+        toScaled(priced.equipment_unit_cost) +
+        toScaled(priced.sub_unit_cost);
 
       let unit = rawUnit;
       if (classMod) unit = applyMultiplier(unit, classMod.multiplier);
@@ -243,10 +267,11 @@ export async function generateDraftEstimate(
         unit_cost: scaledToString(unit),
         total: scaledToCentsString(totalScaled),
         benchmark_unit_cost: scaledToString(rawUnit),
-        market_cost_item_id: market.id,
+        market_cost_item_id: learned ? null : market?.id ?? null,
+        seed_source: seedSource,
         totalScaled,
       };
-      assertConvertibleLine({ ...line, cost_kind: "subcontract", seed_source: "market_seed" });
+      assertConvertibleLine({ ...line, cost_kind: "subcontract" });
       lines.push(line);
     }
   }
@@ -344,11 +369,11 @@ export async function generateDraftEstimate(
          (org_id, estimate_version_id, sort_order, cost_code_id, cost_kind, description,
           cost_item_id, assembly_id, quantity, uom, unit_cost, total,
           benchmark_unit_cost, seed_source, market_cost_item_id)
-       VALUES ($1,$2,$3,$4,'subcontract',$5,$6,$7,$8,$9,$10,$11,$12,'market_seed',$13)`,
+       VALUES ($1,$2,$3,$4,'subcontract',$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)`,
       [
         sub.org_id, version.id, l.sort_order, l.cost_code_id, l.description,
         l.cost_item_id, l.assembly_id, l.quantity, l.uom, l.unit_cost, l.total,
-        l.benchmark_unit_cost, l.market_cost_item_id,
+        l.benchmark_unit_cost, l.seed_source, l.market_cost_item_id,
       ]
     );
   }
@@ -381,7 +406,7 @@ export async function generateDraftEstimate(
       }),
       JSON.stringify(assembliesFired),
       JSON.stringify(modifiersApplied),
-      JSON.stringify([{ note: "US-021 learned-vs-market precedence lands with EP-04; all lines market_seed" }]),
+      JSON.stringify(precedenceLog),
       JSON.stringify(unknowns),
       scaledToCentsString(lowScaled < 0n ? 0n : lowScaled),
       scaledToCentsString(highScaled),
