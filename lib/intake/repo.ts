@@ -12,6 +12,17 @@ export interface IntakeLink {
   label: string | null;
 }
 
+export async function intakeLinkForOrg(orgId: string): Promise<IntakeLink | null> {
+  const r = await getPool().query(
+    `SELECT id, org_id, slug, channel, display_name, label
+     FROM intake_links
+     WHERE org_id = $1 AND is_active AND deleted_at IS NULL
+     ORDER BY created_at LIMIT 1`,
+    [orgId]
+  );
+  return r.rows[0] ?? null;
+}
+
 export async function findActiveLink(slug: string): Promise<IntakeLink | null> {
   const r = await getPool().query(
     `SELECT id, org_id, slug, channel, display_name, label

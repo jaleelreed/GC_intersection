@@ -47,6 +47,8 @@ export default function SignInPage() {
       if (error) {
         setError(error.message ?? "That code didn't match. Try again, or resend.");
       } else {
+        // First sign-in gets a workspace before we land on /app.
+        await fetch("/api/onboarding/provision", { method: "POST" }).catch(() => {});
         router.push("/app");
         router.refresh();
       }
