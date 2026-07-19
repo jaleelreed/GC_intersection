@@ -73,6 +73,10 @@ export async function convertSubmission(submissionId: string): Promise<string | 
       return null; // spam / discarded never convert
     }
 
+    // projects has UNIQUE (org_id, code); serialize allocation per org so
+    // concurrent conversions can't compute the same sequence number. The
+    // advisory lock releases at COMMIT/ROLLBACK.
+    await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [sub.org_id]);
     const code = await nextProjectCode(client, sub.org_id, new Date().getFullYear());
     const name = buildProjectName(sub.address_line1, sub.scope_toggles);
 
