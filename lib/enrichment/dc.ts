@@ -37,7 +37,7 @@ export function parseDcAttributes(
   // Actual year built (AYB) is the standard CAMA field; fall back to EYB.
   const yb = num(c.AYB) ?? num(c.ayb) ?? num(c.YR_BUILT) ?? num(c.EYB) ?? num(c.eyb);
   if (yb && yb >= 1700 && yb <= 2100) out.year_built = yb;
-  const gsf = num(c.GBA) ?? num(c.gba) ?? num(c.LIVING_GBA) ?? num(c.gross_building_area);
+  const gsf = num(c.GBA) ?? num(c.gba) ?? num(c.LIVING_GBA) ?? num(c.living_gba) ?? num(c.gross_building_area);
   if (gsf) out.gsf = gsf;
   const stories = num(c.STORIES) ?? num(c.stories) ?? num(c.NUM_STORIES);
   if (stories) out.stories = stories;
