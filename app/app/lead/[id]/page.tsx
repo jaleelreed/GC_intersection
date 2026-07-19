@@ -71,6 +71,11 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
               </li>
             ))}
           </ul>
+          <p>
+            <a className="gci-cta" href={`/app/lead/${id}/edit`}>
+              Edit to your prices →
+            </a>
+          </p>
         </>
       ) : (
         <p className="gci-errors">

@@ -10,9 +10,9 @@ export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ path: string[] }> };
 
 export async function GET(request: Request, ctx: Ctx) {
-  return getAuth().handler().GET(request, ctx as never);
+  return (await getAuth()).handler().GET(request, ctx as never);
 }
 
 export async function POST(request: Request, ctx: Ctx) {
-  return getAuth().handler().POST(request, ctx as never);
+  return (await getAuth()).handler().POST(request, ctx as never);
 }
