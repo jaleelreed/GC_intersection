@@ -41,8 +41,8 @@
   --muted: #6c6660;      /* warm gray */
   --faint: #736c64;      /* AA-passing secondary text on paper */
   --line: #ece7e0;       /* warm border */
-  --accent: #c73f22;     /* ember — dark enough for white text to pass AA */
-  --accent-hover: #ad3319;
+  --accent: #bd3a1e;     /* ember — dark enough for white text + accent-on-soft to pass AA */
+  --accent-hover: #a5321a;
   --accent-fg: #ffffff;
   --accent-soft: #fdece6;
   --positive: #2f8f5b;
