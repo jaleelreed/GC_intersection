@@ -59,9 +59,9 @@ test("GC signs in, edits a lead's estimate, sends a bid, buyer accepts", async (
   const buyerUrl = await linkInput.inputValue();
   expect(buyerUrl).toContain("/p/");
 
-  // Buyer opens the link (no auth) and accepts.
+  // Buyer opens the link and accepts (the bid page is token-based; auth
+  // cookies are irrelevant to it).
   const buyer = await context.newPage();
-  await buyer.clearCookies();
   await buyer.goto(buyerUrl);
   await buyer.getByRole("button", { name: "Accept this bid" }).click();
   await buyer.getByRole("button", { name: "Yes, accept this bid" }).click();
