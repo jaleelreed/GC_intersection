@@ -641,3 +641,11 @@ legend {
   background: #fff;
 }
 .gci-stat-num { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* Settings (Gap 6) */
+.gci-saved {
+  position: sticky;
+  top: 60px;
+  color: #15803d;
+  font-weight: 700;
+}
