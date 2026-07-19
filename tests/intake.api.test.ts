@@ -19,10 +19,20 @@ const params = (slug: string) => ({ params: Promise.resolve({ slug }) });
 
 d("POST /api/intake/[slug]", () => {
   afterAll(async () => {
-    await getPool().query(
+    // Conversion (US-007) may have created projects; submissions point at
+    // them, so capture ids, delete submissions, then the projects.
+    const pool = getPool();
+    const ids = (
+      await pool.query(
+        `SELECT project_id FROM intake_submissions
+         WHERE contact_email LIKE '%@intake-test.example' AND project_id IS NOT NULL`
+      )
+    ).rows.map((r) => r.project_id);
+    await pool.query(
       "DELETE FROM intake_submissions WHERE contact_email LIKE '%@intake-test.example'"
     );
-    await getPool().end();
+    if (ids.length) await pool.query("DELETE FROM projects WHERE id = ANY($1)", [ids]);
+    await pool.end();
   });
 
   it("writes a submission with channel and org snapshotted from the link", async () => {
@@ -39,7 +49,7 @@ d("POST /api/intake/[slug]", () => {
     ).rows[0];
     expect(row.org_id).toBe("00000000-0000-4000-8000-000000000001");
     expect(row.channel).toBe("qr"); // snapshot from intake_links.channel
-    expect(row.status).toBe("submitted");
+    expect(row.status).toBe("converted"); // US-007 converts inline on submit
     expect(row.bath).toEqual({ on: true, class: "reconfigure" });
   });
 
