@@ -428,3 +428,55 @@ legend {
   body { background: #fff; }
   .gci-page { max-width: 100%; }
 }
+
+/* Global workspace nav (all /app pages) */
+.gci-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-bottom: 2px solid var(--gci-ink);
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.gci-nav-brand {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--gci-ink);
+  text-decoration: none;
+}
+.gci-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.gci-navlink {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--gci-accent);
+  text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  min-height: 44px;
+}
+.gci-nav-email {
+  font-size: 13px;
+  color: var(--gci-muted);
+  max-width: 40vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gci-signout { color: var(--gci-muted); }
+.gci-back { margin: 12px 0 0; }
+.gci-app .gci-page { padding-top: 8px; }
+
+@media (max-width: 480px) {
+  .gci-nav-email { display: none; }
+}

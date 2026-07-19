@@ -45,10 +45,9 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
 
   return (
     <main className="gci-page">
-      <header className="gci-chrome">
-        <span className="gci-gc-name">{ws.orgName}</span>
+      <p className="gci-back">
         <a href="/app">← Leads</a>
-      </header>
+      </p>
 
       <h1>
         {sub.address_line1}, {sub.city}

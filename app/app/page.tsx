@@ -19,10 +19,6 @@ export default async function AppHome() {
 
   return (
     <main className="gci-page">
-      <header className="gci-chrome">
-        <span className="gci-gc-name">{ws.orgName}</span>
-        <span className="gci-powered">{user.email}</span>
-      </header>
       <h1>Leads</h1>
       {notes.length === 0 ? (
         <section>
