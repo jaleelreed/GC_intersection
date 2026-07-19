@@ -609,3 +609,23 @@ legend {
 .gci-markup-row span:first-child { min-width: 90px; }
 .gci-markup-row input { width: 70px; padding: 8px; text-align: right; border: 1px solid var(--gci-border); border-radius: 6px; }
 .gci-lines select { max-width: 160px; }
+
+/* Links manager (Gap 4) */
+.gci-linkcard {
+  border: 1px solid var(--gci-border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 12px 0;
+  background: #fff;
+}
+.gci-linkcard-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.gci-newlink { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.gci-newlink input { flex: 1; min-width: 160px; padding: 10px; border: 1px solid var(--gci-border); border-radius: 8px; }
+.gci-newlink select { padding: 10px; border: 1px solid var(--gci-border); border-radius: 8px; }
+.gci-newlink .gci-primary { min-height: 44px; padding: 0 16px; background: var(--gci-accent); border: none; border-radius: 8px; color: #fff; font-weight: 700; cursor: pointer; }
