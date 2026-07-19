@@ -1,0 +1,219 @@
+/* Contractor-grade tokens (docs/design/EP-01-02-design.md): 16px+ type,
+   44px+ targets, one accent, high contrast. */
+:root {
+  --gci-accent: #b45309;
+  --gci-ink: #1e293b;
+  --gci-muted: #64748b;
+  --gci-surface: #f8fafc;
+  --gci-border: #cbd5e1;
+  --gci-error: #b91c1c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-size: 16px;
+  color: var(--gci-ink);
+  background: var(--gci-surface);
+}
+
+.gci-page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.gci-chrome {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 2px solid var(--gci-ink);
+  margin-bottom: 16px;
+}
+
+.gci-gc-name {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.gci-powered {
+  font-size: 12px;
+  color: var(--gci-muted);
+  white-space: nowrap;
+}
+
+.gci-form label {
+  display: block;
+  margin: 12px 0;
+  font-weight: 600;
+}
+
+.gci-form input,
+.gci-form textarea {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid var(--gci-border);
+  border-radius: 6px;
+  min-height: 44px;
+}
+
+.gci-row {
+  display: flex;
+  gap: 8px;
+}
+
+.gci-row label {
+  flex: 1;
+}
+
+.gci-opt {
+  font-weight: 400;
+  color: var(--gci-muted);
+  font-size: 14px;
+}
+
+.gci-hint {
+  color: var(--gci-muted);
+  font-size: 14px;
+}
+
+.gci-progress {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 8px;
+  font-size: 13px;
+  color: var(--gci-muted);
+}
+
+.gci-progress li[aria-current="step"] {
+  color: var(--gci-accent);
+  font-weight: 700;
+}
+
+.gci-toggles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.gci-toggle > button {
+  width: 100%;
+  min-height: 52px;
+  font-size: 16px;
+  border: 1.5px solid var(--gci-border);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.gci-toggle.on > button {
+  border-color: var(--gci-accent);
+  background: #fff7ed;
+  font-weight: 700;
+}
+
+.gci-classes {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0;
+}
+
+.gci-classes button {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--gci-border);
+  border-radius: 999px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.gci-classes button.sel {
+  border-color: var(--gci-accent);
+  background: var(--gci-accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.gci-toggle.on {
+  grid-column: 1 / -1;
+}
+
+fieldset {
+  border: 1px solid var(--gci-border);
+  border-radius: 8px;
+  margin: 12px 0;
+}
+
+legend {
+  font-weight: 700;
+  padding: 0 6px;
+}
+
+.gci-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 400;
+  min-height: 44px;
+  margin: 0;
+}
+
+.gci-check input {
+  width: 20px;
+  height: 20px;
+  min-height: 0;
+  margin: 0;
+}
+
+.gci-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.gci-nav button {
+  min-height: 48px;
+  padding: 0 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--gci-border);
+  background: #fff;
+  cursor: pointer;
+}
+
+.gci-nav .gci-primary {
+  margin-left: auto;
+  background: var(--gci-accent);
+  border-color: var(--gci-accent);
+  color: #fff;
+  font-weight: 700;
+}
+
+.gci-errors {
+  border: 1.5px solid var(--gci-error);
+  color: var(--gci-error);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 8px 0;
+}
+
+.hp-wrap {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+}

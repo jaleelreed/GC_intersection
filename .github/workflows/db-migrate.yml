@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ["db/migrations/**"]
+    paths: ["db/migrations/**", "scripts/db/**"]
 
 concurrency:
   group: db-migrate
