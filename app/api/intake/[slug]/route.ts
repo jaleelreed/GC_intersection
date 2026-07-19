@@ -3,6 +3,11 @@
 import { intakeSubmissionSchema, isSpam } from "../../../../lib/intake/schema";
 import { findActiveLink, insertSubmission } from "../../../../lib/intake/repo";
 import { convertSubmission } from "../../../../lib/intake/convert";
+import { deriveCountyFips } from "../../../../lib/enrichment/county";
+import { FixtureEnrichmentProvider } from "../../../../lib/enrichment/provider";
+import { storeSnapshot } from "../../../../lib/enrichment/repo";
+
+const enrichment = new FixtureEnrichmentProvider();
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,7 +45,32 @@ export async function POST(
 
   // Spam is stored (status='spam'), never surfaced to the submitter.
   const status = isSpam(parsed.data, Date.now()) ? "spam" : "submitted";
-  const { id } = await insertSubmission(link, parsed.data, status);
+
+  // US-005c: derive the county that keys the market seed (null = unknown =
+  // the range widens; never guessed), and snapshot enrichment. An empty
+  // extract is the normal state; a snapshot failure never blocks a lead.
+  const county_fips = deriveCountyFips(parsed.data.postal_code);
+  let enrichment_snapshot_id: string | null = null;
+  try {
+    const result = await enrichment.enrich({
+      line1: parsed.data.address_line1,
+      city: parsed.data.city,
+      state: parsed.data.state,
+      postal_code: parsed.data.postal_code,
+    });
+    enrichment_snapshot_id = await storeSnapshot(
+      link.org_id,
+      `${parsed.data.address_line1}, ${parsed.data.city} ${parsed.data.state} ${parsed.data.postal_code}`.toLowerCase(),
+      result
+    );
+  } catch (err) {
+    console.error("enrichment failed (lead proceeds)", { err });
+  }
+
+  const { id } = await insertSubmission(link, parsed.data, status, {
+    county_fips,
+    enrichment_snapshot_id,
+  });
 
   // US-007: conversion runs after the submission is safely stored. A failure
   // here leaves the submission 'submitted' (retryable) — the homeowner still

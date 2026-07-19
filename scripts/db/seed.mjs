@@ -33,6 +33,25 @@ try {
     [TEST_MEMBERSHIP_ID, TEST_ORG_ID, TEST_USER_ID]
   );
 
+  // US-005c: the DC-area launch six — geography source of truth. Must exist
+  // before any submission carries county_fips (FK from migration 011).
+  const COUNTIES = [
+    ["11001", "District of Columbia", "DC"],
+    ["24031", "Montgomery County", "MD"],
+    ["24033", "Prince George's County", "MD"],
+    ["51013", "Arlington County", "VA"],
+    ["51059", "Fairfax County", "VA"],
+    ["51510", "Alexandria City", "VA"],
+  ];
+  for (const [fips, name, state] of COUNTIES) {
+    await client.query(
+      `INSERT INTO counties (fips, name, state_code, msa_code, msa_name)
+       VALUES ($1, $2, $3, '47900', 'Washington-Arlington-Alexandria, DC-VA-MD-WV')
+       ON CONFLICT (fips) DO NOTHING`,
+      [fips, name, state]
+    );
+  }
+
   // US-005: one intake link per channel + an inactive one (404 test path).
   const LINKS = [
     ["00000000-0000-4000-8000-000000000101", "fixture-link", "link", true],

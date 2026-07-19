@@ -11,6 +11,13 @@ export async function cleanupSubmissions(pool: Pool, emailPattern: string): Prom
       [emailPattern]
     )
   ).rows.map((r) => r.project_id);
+  const snapshotIds = (
+    await pool.query(
+      `SELECT enrichment_snapshot_id FROM intake_submissions
+       WHERE contact_email LIKE $1 AND enrichment_snapshot_id IS NOT NULL`,
+      [emailPattern]
+    )
+  ).rows.map((r) => r.enrichment_snapshot_id);
 
   await pool.query(
     `DELETE FROM intake_scope_hints WHERE intake_submission_id IN (
@@ -23,6 +30,9 @@ export async function cleanupSubmissions(pool: Pool, emailPattern: string): Prom
     [emailPattern]
   );
   await pool.query(`DELETE FROM intake_submissions WHERE contact_email LIKE $1`, [emailPattern]);
+  if (snapshotIds.length) {
+    await pool.query(`DELETE FROM enrichment_snapshots WHERE id = ANY($1)`, [snapshotIds]);
+  }
   if (projectIds.length) {
     await pool.query(`DELETE FROM ai_jobs WHERE project_id = ANY($1)`, [projectIds]);
     await pool.query(`DELETE FROM projects WHERE id = ANY($1)`, [projectIds]);
