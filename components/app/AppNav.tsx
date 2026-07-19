@@ -17,6 +17,9 @@ export function AppNav({ orgName, email }: { orgName: string; email: string }) {
         <Link href="/app/links" className="gci-navlink">
           Links
         </Link>
+        <Link href="/app/insights" className="gci-navlink">
+          Insights
+        </Link>
         <span className="gci-nav-email" title={email}>
           {email}
         </span>

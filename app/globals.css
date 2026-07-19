@@ -629,3 +629,15 @@ legend {
 .gci-newlink input { flex: 1; min-width: 160px; padding: 10px; border: 1px solid var(--gci-border); border-radius: 8px; }
 .gci-newlink select { padding: 10px; border: 1px solid var(--gci-border); border-radius: 8px; }
 .gci-newlink .gci-primary { min-height: 44px; padding: 0 16px; background: var(--gci-accent); border: none; border-radius: 8px; color: #fff; font-weight: 700; cursor: pointer; }
+
+/* Insights (Gap 5) */
+.gci-stat-grid { display: flex; gap: 12px; flex-wrap: wrap; margin: 12px 0; }
+.gci-stat {
+  flex: 1;
+  min-width: 140px;
+  border: 1px solid var(--gci-border);
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+}
+.gci-stat-num { font-size: 32px; font-weight: 800; font-variant-numeric: tabular-nums; }
