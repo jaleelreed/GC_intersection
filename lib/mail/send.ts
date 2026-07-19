@@ -59,7 +59,7 @@ export async function sendOutbound(
   await runner.query(
     `INSERT INTO outbound_messages
        (org_id, kind, subject_table, subject_id, recipient_email, status, provider, provider_ref, sent_at, error)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8, CASE WHEN $6 = 'sent' THEN now() ELSE NULL END, $9)`,
+     VALUES ($1,$2,$3,$4,$5,$6::message_status,$7,$8, CASE WHEN $6 = 'sent' THEN now() ELSE NULL END, $9)`,
     [
       args.orgId,
       args.kind,
