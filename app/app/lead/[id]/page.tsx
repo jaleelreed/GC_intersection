@@ -4,6 +4,9 @@ import { currentUserEmail } from "../../../../lib/auth/server";
 import { resolveWorkspace } from "../../../../lib/workspace";
 import { getPool } from "../../../../lib/db";
 import { SendBid } from "../../../../components/estimate/SendBid";
+import { StageControl } from "../../../../components/leads/StageControl";
+import { LeadNotes } from "../../../../components/leads/LeadNotes";
+import { listNotes, type LeadStage } from "../../../../lib/leads/repo";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +21,7 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
   const sub = (
     await getPool().query(
       `SELECT s.id, s.address_line1, s.city, s.channel, s.contact_name, s.contact_email,
-              s.scope_toggles, s.structural_flags, s.finish_tier, s.submitted_at,
+              s.scope_toggles, s.structural_flags, s.finish_tier, s.submitted_at, s.pipeline_stage,
               e.id AS estimate_id, v.id AS version_id, v.grand_total, v.range_low, v.range_high, v.swing_drivers
        FROM intake_submissions s
        LEFT JOIN estimates e ON e.id = s.estimate_id
@@ -42,12 +45,15 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
     (sub.scope_toggles ?? {}) as Record<string, { on: boolean; class: string | null }>
   ).filter(([, v]) => v.on);
   const drivers = ((sub.swing_drivers ?? []) as { driver: string; widen_amount_pct: number }[]).slice(0, 3);
+  const notes = await listNotes(ws.orgId, id);
 
   return (
     <main className="gci-page">
       <p className="gci-back">
         <a href="/app">← Leads</a>
       </p>
+
+      <StageControl leadId={id} stage={sub.pipeline_stage as LeadStage} />
 
       <h1>
         {sub.address_line1}, {sub.city}
@@ -116,6 +122,8 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
           </ul>
         </section>
       )}
+
+      <LeadNotes leadId={id} initial={notes} />
     </main>
   );
 }

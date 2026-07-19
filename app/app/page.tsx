@@ -1,29 +1,50 @@
-// The GC home: notification inbox → leads. Empty state sells the loop and
-// gives them a usable, shareable link (E design §3; X-1). No workspace = an
+// The GC home: the lead pipeline. Stage filter + counts, each lead priced.
+// Empty state gives them a usable, shareable link (X-1). No workspace = an
 // honest screen, not a silent org.
 import Link from "next/link";
 import { currentUserEmail } from "../../lib/auth/server";
 import { resolveWorkspace } from "../../lib/workspace";
 import { ensureWorkspace } from "../../lib/onboarding/provision";
-import { inbox } from "../../lib/notifications/repo";
 import { intakeLinkForOrg } from "../../lib/intake/repo";
+import { listLeads, stageCounts, LEAD_STAGES, type LeadStage } from "../../lib/leads/repo";
 import { ShareLink } from "../../components/app/ShareLink";
 
 export const dynamic = "force-dynamic";
 
-export default async function AppHome() {
+const money = (v: string | number | null) =>
+  v == null ? "—" : `$${Math.round(Number(v)).toLocaleString("en-US")}`;
+
+const STAGE_LABEL: Record<LeadStage, string> = {
+  new: "New",
+  contacted: "Contacted",
+  quoted: "Quoted",
+  won: "Won",
+  lost: "Lost",
+};
+
+export default async function AppHome({
+  searchParams,
+}: {
+  searchParams: Promise<{ stage?: string }>;
+}) {
   const user = (await currentUserEmail())!; // layout guards
-  // Safety net: if the sign-in provisioning call was missed, provision here.
   const ws = (await resolveWorkspace(user.email)) ?? (await ensureWorkspace(user.email, user.name));
 
-  const notes = await inbox(ws.orgId, ws.userId, { limit: 30 });
-  const link = await intakeLinkForOrg(ws.orgId);
+  const { stage } = await searchParams;
+  const active = LEAD_STAGES.includes(stage as LeadStage) ? (stage as LeadStage) : undefined;
+
+  const [leads, counts, link] = await Promise.all([
+    listLeads(ws.orgId, { stage: active }),
+    stageCounts(ws.orgId),
+    intakeLinkForOrg(ws.orgId),
+  ]);
+  const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
   return (
     <main className="gci-page">
       <h1>Leads</h1>
 
-      {notes.length === 0 ? (
+      {total === 0 ? (
         <>
           <div className="gci-empty">
             <p className="gci-empty-lead">No leads yet.</p>
@@ -42,18 +63,45 @@ export default async function AppHome() {
         </>
       ) : (
         <>
+          <nav className="gci-pipeline" aria-label="Pipeline">
+            <Link href="/app" className={`gci-pill ${!active ? "sel" : ""}`}>
+              All {total}
+            </Link>
+            {LEAD_STAGES.map((s) => (
+              <Link
+                key={s}
+                href={`/app?stage=${s}`}
+                className={`gci-pill gci-stage-${s} ${active === s ? "sel" : ""}`}
+              >
+                {STAGE_LABEL[s]} {counts[s]}
+              </Link>
+            ))}
+          </nav>
+
           <ul className="gci-leads">
-            {notes.map((n) => (
-              <li key={n.id}>
-                <Link href={`/app/lead/${n.subject_id}`}>
-                  <strong>{n.title}</strong>
-                  {!n.read_at && <span className="gci-unread"> • new</span>}
-                  <br />
-                  <span className="gci-hint">{n.body}</span>
+            {leads.map((l) => (
+              <li key={l.id}>
+                <Link href={`/app/lead/${l.id}`}>
+                  <div className="gci-lead-row">
+                    <strong>
+                      {l.address_line1}, {l.city}
+                    </strong>
+                    <span className="gci-lead-total">
+                      {l.range_low != null
+                        ? `${money(l.range_low)}–${money(l.range_high)}`
+                        : money(l.grand_total)}
+                    </span>
+                  </div>
+                  <span className="gci-hint">
+                    {STAGE_LABEL[l.pipeline_stage]} · via {l.channel}
+                    {l.contact_name ? ` · ${l.contact_name}` : ""}
+                  </span>
                 </Link>
               </li>
             ))}
+            {leads.length === 0 && <li className="gci-hint">No leads in this stage.</li>}
           </ul>
+
           {link && <ShareLink slug={link.slug} compact />}
         </>
       )}
