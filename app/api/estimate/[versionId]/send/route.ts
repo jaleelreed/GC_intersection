@@ -3,7 +3,7 @@
 // token exists only in this response and the link — never stored in the clear.
 import { currentUserEmail } from "../../../../../lib/auth/server";
 import { resolveWorkspace } from "../../../../../lib/workspace";
-import { getPool } from "../../../../../lib/db";
+import { orgQuery } from "../../../../../lib/db";
 import { createProposal, sendProposal } from "../../../../../lib/proposals/repo";
 import { sendOutbound, proposalEmailHtml } from "../../../../../lib/mail/send";
 
@@ -18,7 +18,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ versionId: str
   if (!ws) return Response.json({ error: "no workspace" }, { status: 403 });
 
   const owned = (
-    await getPool().query(
+    await orgQuery(
+      ws.orgId,
       `SELECT v.id, pr.name AS project_name
        FROM estimate_versions v
        JOIN estimates e ON e.id = v.estimate_id
@@ -46,6 +47,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ versionId: str
   if (!body.recipientEmail) return Response.json({ error: "recipient email required" }, { status: 400 });
 
   const { proposalId } = await createProposal({
+    orgId: ws.orgId,
     estimateVersionId: versionId,
     recipientName: body.recipientName ?? "",
     recipientEmail: body.recipientEmail,
@@ -57,7 +59,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ versionId: str
     },
   });
   const expiresDays = Number.isFinite(body.expiresDays) ? Math.min(365, Math.max(1, body.expiresDays!)) : 30;
-  const { rawToken } = await sendProposal(proposalId, { expiresDays });
+  const { rawToken } = await sendProposal(proposalId, ws.orgId, { expiresDays });
 
   const origin = new URL(req.url).origin;
   const buyerUrl = `${origin}/p/${rawToken}`;

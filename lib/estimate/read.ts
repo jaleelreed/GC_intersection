@@ -66,7 +66,8 @@ export interface VersionRow {
 }
 
 export async function listVersions(estimateId: string, orgId: string): Promise<VersionRow[]> {
-  const r = await getPool().query(
+  const r = await orgQuery<VersionRow>(
+    orgId,
     `SELECT v.id, v.version_no, v.label, v.grand_total, v.created_at,
             (v.id = e.current_version_id) AS is_current,
             (v.locked_at IS NOT NULL) AS locked
@@ -150,7 +151,8 @@ export async function currentEstimateForLead(
   ).rows;
 
   const markups = (
-    await getPool().query(
+    await orgQuery<EditorMarkup>(
+      orgId,
       `SELECT name, markup_kind, rate_pct, computed_amount
        FROM estimate_markups WHERE estimate_version_id = $1 AND deleted_at IS NULL
        ORDER BY apply_order`,

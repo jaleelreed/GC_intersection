@@ -40,6 +40,8 @@ export interface EditOptions {
   adds?: NewLine[]; // GC-added lines (fresh lineage, seed_source gc_edit)
   markups?: MarkupEdit[]; // set rate_pct on existing markups by name
   flags?: LineFlag[]; // mark lines as allowance / alternate
+  orgId?: string; // set the RLS org context up front (required in prod, where
+  // estimate_versions is FORCE-RLS'd; omitted by superuser unit tests)
 }
 
 /**
@@ -55,6 +57,9 @@ export async function editIntoNewVersion(
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
+    // estimate_versions/estimates are FORCE-RLS'd; scope before reading them.
+    // (Superuser unit tests omit orgId and bypass RLS; prod always passes it.)
+    if (opts.orgId) await setOrg(client, opts.orgId);
 
     const src = (
       await client.query(
