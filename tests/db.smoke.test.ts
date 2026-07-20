@@ -33,6 +33,7 @@ d("database (migrated + seeded)", () => {
       "031_force-cost-items.sql",
       "032_force-estimate-lines.sql",
       "033_force-pii.sql",
+      "034_force-bid-tables.sql",
       "040_rate-limits.sql",
       "050_bid-customization.sql",
       "060_intake-photos.sql",

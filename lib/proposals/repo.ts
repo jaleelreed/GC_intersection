@@ -3,8 +3,26 @@
 // and THE D7 FREEZE: acceptance locks the estimate version at the database
 // layer (US-025). D6: no payment objects exist, by design.
 import { createHash, randomBytes } from "node:crypto";
-import { getPool, setOrg, orgQuery } from "../db";
+import type { PoolClient } from "pg";
+import { getPool, setOrg, orgQuery, withOrg } from "../db";
 import { audit } from "../audit/repo";
+
+// Buyer path: proposals / estimate_versions / projects / proposal_events are
+// FORCE-RLS'd, but the buyer has no org context — only a token. Resolve the org
+// from the token table (which is intentionally NOT FORCE'd — the unguessable
+// token IS the authorization) and set it, so the FORCE'd rows become visible.
+// A bad/expired token sets nothing; the caller's own token-scoped query then
+// returns no row and it falls through to its existing not-found handling.
+async function scopeToToken(client: PoolClient, rawToken: string): Promise<void> {
+  const row = (
+    await client.query(
+      `SELECT org_id FROM proposal_access_tokens
+       WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > now() AND deleted_at IS NULL`,
+      [hashToken(rawToken)]
+    )
+  ).rows[0];
+  if (row) await setOrg(client, row.org_id);
+}
 
 // US-018/US-026: the machine. Decline is now DEFINED (Gap 7): a buyer may
 // decline a proposal they have received (sent) or viewed; declining records
@@ -38,30 +56,37 @@ export interface BidCustomization {
 }
 
 export async function createProposal(args: {
+  orgId?: string; // required in prod (estimate_versions/proposals are FORCE-RLS'd);
+  // omitted by superuser unit tests, which bypass RLS
   estimateVersionId: string;
   recipientName: string;
   recipientEmail: string;
   customization?: BidCustomization;
 }): Promise<{ proposalId: string }> {
-  const v = (
-    await getPool().query(
-      `SELECT v.id, v.org_id, e.project_id FROM estimate_versions v
-       JOIN estimates e ON e.id = v.estimate_id
-       WHERE v.id = $1 AND v.deleted_at IS NULL`,
-      [args.estimateVersionId]
-    )
-  ).rows[0];
-  if (!v) throw new Error("estimate version not found");
   const c = args.customization ?? {};
   const trim = (s?: string) => (s?.trim() ? s.trim().slice(0, 4000) : null);
-  const r = await getPool().query(
-    `INSERT INTO proposals (org_id, project_id, estimate_version_id, status, recipient_name, recipient_email,
-       cover_note, inclusions, exclusions, terms)
-     VALUES ($1, $2, $3, 'draft', $4, $5, $6, $7, $8, $9) RETURNING id`,
-    [v.org_id, v.project_id, v.id, args.recipientName, args.recipientEmail,
-     trim(c.coverNote), trim(c.inclusions), trim(c.exclusions), trim(c.terms)]
-  );
-  return { proposalId: r.rows[0].id };
+  const run = async (q: (text: string, params: unknown[]) => Promise<{ rows: Array<Record<string, string>> }>) => {
+    const v = (
+      await q(
+        `SELECT v.id, v.org_id, e.project_id FROM estimate_versions v
+         JOIN estimates e ON e.id = v.estimate_id
+         WHERE v.id = $1 AND v.deleted_at IS NULL`,
+        [args.estimateVersionId]
+      )
+    ).rows[0];
+    if (!v) throw new Error("estimate version not found");
+    const r = await q(
+      `INSERT INTO proposals (org_id, project_id, estimate_version_id, status, recipient_name, recipient_email,
+         cover_note, inclusions, exclusions, terms)
+       VALUES ($1, $2, $3, 'draft', $4, $5, $6, $7, $8, $9) RETURNING id`,
+      [v.org_id, v.project_id, v.id, args.recipientName, args.recipientEmail,
+       trim(c.coverNote), trim(c.inclusions), trim(c.exclusions), trim(c.terms)]
+    );
+    return { proposalId: r.rows[0].id };
+  };
+  if (args.orgId) return withOrg(args.orgId, (client) => run((t, p) => client.query(t, p)));
+  const pool = getPool();
+  return run((t, p) => pool.query(t, p));
 }
 
 /**
@@ -70,11 +95,12 @@ export async function createProposal(args: {
  */
 export async function sendProposal(
   proposalId: string,
-  opts: { expiresDays?: number } = {}
+  opts: { expiresDays?: number; orgId?: string } = {}
 ): Promise<{ rawToken: string }> {
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
+    if (opts.orgId) await setOrg(client, opts.orgId); // proposals/proposal_events are FORCE-RLS'd
     const p = (
       await client.query(`SELECT id, org_id, status FROM proposals WHERE id = $1 FOR UPDATE`, [proposalId])
     ).rows[0];
@@ -168,6 +194,7 @@ export async function getProposalByToken(rawToken: string): Promise<BuyerProposa
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
+    await scopeToToken(client, rawToken); // proposals/estimate_versions/projects are FORCE-RLS'd
     const t = (
       await client.query(
         `SELECT t.id AS token_id, t.proposal_id, t.org_id, p.status, p.recipient_name,
@@ -243,6 +270,7 @@ export async function acceptProposal(rawToken: string): Promise<AcceptResult | n
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
+    await scopeToToken(client, rawToken);
     const t = (
       await client.query(
         `SELECT t.id AS token_id, t.proposal_id, t.org_id, p.status, p.estimate_version_id,
@@ -299,6 +327,7 @@ export async function askQuestion(rawToken: string, question: string): Promise<b
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
+    await scopeToToken(client, rawToken);
     const t = (
       await client.query(
         `SELECT t.id AS token_id, t.proposal_id, t.org_id
@@ -349,6 +378,7 @@ export async function declineProposal(
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
+    await scopeToToken(client, rawToken);
     const t = (
       await client.query(
         `SELECT t.id AS token_id, t.proposal_id, t.org_id, p.status, p.project_id
@@ -421,7 +451,8 @@ export interface ProposalRow {
 }
 
 export async function listProposals(orgId: string): Promise<ProposalRow[]> {
-  const r = await getPool().query(
+  const r = await orgQuery<ProposalRow>(
+    orgId,
     `SELECT p.id, p.status, p.recipient_email, pr.name AS project_name,
             e.intake_submission_id AS submission_id, v.grand_total,
             p.sent_at, p.accepted_at
@@ -445,6 +476,7 @@ export async function resendProposal(
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
+    await setOrg(client, orgId); // proposals is FORCE-RLS'd
     const p = (
       await client.query(
         `SELECT id, status FROM proposals WHERE id = $1 AND org_id = $2 AND deleted_at IS NULL FOR UPDATE`,
@@ -480,6 +512,7 @@ export async function withdrawProposal(orgId: string, proposalId: string): Promi
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
+    await setOrg(client, orgId); // proposals + proposal_events are FORCE-RLS'd
     const p = (
       await client.query(
         `SELECT status FROM proposals WHERE id = $1 AND org_id = $2 AND deleted_at IS NULL FOR UPDATE`,

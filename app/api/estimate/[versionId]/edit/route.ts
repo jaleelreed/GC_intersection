@@ -4,7 +4,7 @@
 // harvest, and D7-safe writes.
 import { currentUserEmail } from "../../../../../lib/auth/server";
 import { resolveWorkspace } from "../../../../../lib/workspace";
-import { getPool } from "../../../../../lib/db";
+import { orgQuery } from "../../../../../lib/db";
 import { editIntoNewVersion, type LineEdit, type NewLine, type MarkupEdit, type LineFlag } from "../../../../../lib/estimate/edit";
 
 export const runtime = "nodejs";
@@ -19,7 +19,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ versionId: str
 
   // Ownership: the version's org must be the caller's org.
   const owned = (
-    await getPool().query(
+    await orgQuery(
+      ws.orgId,
       `SELECT v.locked_at FROM estimate_versions v
        WHERE v.id = $1 AND v.org_id = $2 AND v.deleted_at IS NULL`,
       [versionId, ws.orgId]
@@ -54,6 +55,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ versionId: str
       adds,
       markups,
       flags,
+      orgId: ws.orgId,
     });
     return Response.json({ ok: true, newVersionId, edited: editedLineageIds.length });
   } catch (err) {
