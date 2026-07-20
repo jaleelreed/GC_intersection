@@ -2,7 +2,7 @@
 import { notFound } from "next/navigation";
 import { currentUserEmail } from "../../../../lib/auth/server";
 import { resolveWorkspace } from "../../../../lib/workspace";
-import { getPool } from "../../../../lib/db";
+import { getPool, orgQuery } from "../../../../lib/db";
 import { SendBid } from "../../../../components/estimate/SendBid";
 import { StageControl } from "../../../../components/leads/StageControl";
 import { LeadNotes } from "../../../../components/leads/LeadNotes";
@@ -22,7 +22,8 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
   if (!ws) notFound();
 
   const sub = (
-    await getPool().query(
+    await orgQuery(
+      ws.orgId,
       `SELECT s.id, s.address_line1, s.city, s.channel, s.contact_name, s.contact_email,
               s.scope_toggles, s.structural_flags, s.finish_tier, s.submitted_at, s.pipeline_stage,
               e.id AS estimate_id, v.id AS version_id, v.grand_total, v.range_low, v.range_high, v.swing_drivers
