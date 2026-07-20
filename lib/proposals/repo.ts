@@ -56,16 +56,18 @@ export interface BidCustomization {
 }
 
 export async function createProposal(args: {
-  orgId: string;
+  orgId?: string; // required in prod (estimate_versions/proposals are FORCE-RLS'd);
+  // omitted by superuser unit tests, which bypass RLS
   estimateVersionId: string;
   recipientName: string;
   recipientEmail: string;
   customization?: BidCustomization;
 }): Promise<{ proposalId: string }> {
-  // estimate_versions + proposals are FORCE-RLS'd — run under the GC's org.
-  return withOrg(args.orgId, async (client) => {
+  const c = args.customization ?? {};
+  const trim = (s?: string) => (s?.trim() ? s.trim().slice(0, 4000) : null);
+  const run = async (q: (text: string, params: unknown[]) => Promise<{ rows: Array<Record<string, string>> }>) => {
     const v = (
-      await client.query(
+      await q(
         `SELECT v.id, v.org_id, e.project_id FROM estimate_versions v
          JOIN estimates e ON e.id = v.estimate_id
          WHERE v.id = $1 AND v.deleted_at IS NULL`,
@@ -73,9 +75,7 @@ export async function createProposal(args: {
       )
     ).rows[0];
     if (!v) throw new Error("estimate version not found");
-    const c = args.customization ?? {};
-    const trim = (s?: string) => (s?.trim() ? s.trim().slice(0, 4000) : null);
-    const r = await client.query(
+    const r = await q(
       `INSERT INTO proposals (org_id, project_id, estimate_version_id, status, recipient_name, recipient_email,
          cover_note, inclusions, exclusions, terms)
        VALUES ($1, $2, $3, 'draft', $4, $5, $6, $7, $8, $9) RETURNING id`,
@@ -83,7 +83,10 @@ export async function createProposal(args: {
        trim(c.coverNote), trim(c.inclusions), trim(c.exclusions), trim(c.terms)]
     );
     return { proposalId: r.rows[0].id };
-  });
+  };
+  if (args.orgId) return withOrg(args.orgId, (client) => run((t, p) => client.query(t, p)));
+  const pool = getPool();
+  return run((t, p) => pool.query(t, p));
 }
 
 /**
@@ -92,13 +95,12 @@ export async function createProposal(args: {
  */
 export async function sendProposal(
   proposalId: string,
-  orgId: string,
-  opts: { expiresDays?: number } = {}
+  opts: { expiresDays?: number; orgId?: string } = {}
 ): Promise<{ rawToken: string }> {
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
-    await setOrg(client, orgId); // proposals + proposal_events are FORCE-RLS'd
+    if (opts.orgId) await setOrg(client, opts.orgId); // proposals/proposal_events are FORCE-RLS'd
     const p = (
       await client.query(`SELECT id, org_id, status FROM proposals WHERE id = $1 FOR UPDATE`, [proposalId])
     ).rows[0];

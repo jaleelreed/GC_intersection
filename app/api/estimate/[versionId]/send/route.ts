@@ -59,7 +59,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ versionId: str
     },
   });
   const expiresDays = Number.isFinite(body.expiresDays) ? Math.min(365, Math.max(1, body.expiresDays!)) : 30;
-  const { rawToken } = await sendProposal(proposalId, ws.orgId, { expiresDays });
+  const { rawToken } = await sendProposal(proposalId, { orgId: ws.orgId, expiresDays });
 
   const origin = new URL(req.url).origin;
   const buyerUrl = `${origin}/p/${rawToken}`;
