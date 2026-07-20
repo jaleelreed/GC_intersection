@@ -20,17 +20,19 @@ export default async function EditEstimatePage({ params }: { params: Promise<{ i
   const costCodes = await costCodeOptions(ws.orgId);
 
   return (
-    <main className="gci-page gci-wide">
-      <p className="gci-back">
-        <Link href={`/app/lead/${id}`}>← Lead</Link>
+    <main className="ui-rise mx-auto max-w-4xl px-4 py-6">
+      <p className="mb-4 text-sm">
+        <Link href={`/app/lead/${id}`} className="text-muted transition-colors hover:text-ink">
+          ← Lead
+        </Link>
       </p>
-      <h1>Edit estimate</h1>
-      <p className="gci-hint">
+      <h1 className="font-display text-3xl font-bold text-ink">Edit estimate</h1>
+      <p className="mt-1 text-sm text-muted">
         {estimate.addressLine1} · v{estimate.versionNo}
         {estimate.locked && " · accepted (locked)"}
       </p>
       {estimate.locked ? (
-        <p className="gci-errors">
+        <p className="mt-6 rounded-xl border border-danger bg-accent-soft p-4 text-sm text-ink">
           This estimate was accepted and is frozen. Nothing can change it — that&rsquo;s
           the record of what was agreed.
         </p>

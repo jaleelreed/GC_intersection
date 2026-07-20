@@ -29,28 +29,34 @@ export function ShareLink({ slug, compact = false }: { slug: string; compact?: b
   }
 
   return (
-    <section className={`gci-share ${compact ? "gci-share-compact" : ""}`}>
-      <h2>Your estimate link</h2>
-      <p className="gci-hint">Share it with homeowners. Every submission comes back priced.</p>
+    <section className={`ui-card ${compact ? "p-5" : "p-6"}`}>
+      <h2 className="font-display text-lg font-bold">Your estimate link</h2>
+      <p className="mt-1 text-sm text-muted">Share it with homeowners. Every submission comes back priced.</p>
 
-      <div className="gci-copyrow">
-        <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} aria-label="Your intake link" />
-        <button type="button" className="gci-primary" onClick={copy}>
+      <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <input
+          className="ui-input"
+          readOnly
+          value={url}
+          onFocus={(e) => e.currentTarget.select()}
+          aria-label="Your intake link"
+        />
+        <button type="button" className="ui-btn ui-btn-primary shrink-0" onClick={copy}>
           {copied ? "Copied ✓" : "Copy"}
         </button>
       </div>
 
-      <div className="gci-share-actions">
-        <a className="gci-btn" href={url} target="_blank" rel="noreferrer">
+      <div className="mt-3">
+        <a className="ui-btn ui-btn-ghost text-sm" href={url} target="_blank" rel="noreferrer">
           Open the form ↗
         </a>
       </div>
 
       {!compact && qr && (
-        <div className="gci-qr">
+        <div className="mt-5 flex flex-col items-center gap-2 rounded-xl border border-line bg-raised p-4 text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qr} alt="QR code for your intake link" width={160} height={160} />
-          <span className="gci-hint">Point a phone camera here to open the form.</span>
+          <span className="text-sm text-muted">Point a phone camera here to open the form.</span>
         </div>
       )}
     </section>

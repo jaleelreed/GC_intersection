@@ -54,49 +54,60 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
   const photoIds = await listPhotoIds(ws.orgId, id);
 
   return (
-    <main className="gci-page">
-      <p className="gci-back">
-        <a href="/app">← Leads</a>
+    <main className="ui-rise mx-auto max-w-2xl px-4 py-6">
+      <p className="mb-4 text-sm">
+        <a href="/app" className="text-muted transition-colors hover:text-ink">← Leads</a>
       </p>
 
       <StageControl leadId={id} stage={sub.pipeline_stage as LeadStage} />
 
       {gaps.length > 0 && (
-        <div className="gci-coverage" role="alert">
-          <strong>Coverage gap:</strong> the homeowner asked for{" "}
+        <div
+          className="mb-5 rounded-xl border border-danger bg-accent-soft p-4 text-sm text-ink"
+          role="alert"
+        >
+          <strong className="text-danger">Coverage gap:</strong> the homeowner asked for{" "}
           {gaps.join(", ")} but the draft has no priced line for{" "}
           {gaps.length === 1 ? "it" : "them"}. Add {gaps.length === 1 ? "a line" : "lines"} in
           the editor, or note the exclusion, before you send.
         </div>
       )}
 
-      <h1>
+      <h1 className="font-display text-3xl font-bold text-ink">
         {sub.address_line1}, {sub.city}
       </h1>
-      <p className="gci-hint">
+      <p className="mt-1 text-sm text-muted">
         New lead · via {sub.channel} · {sub.contact_name} ({sub.contact_email})
       </p>
 
       {sub.version_id ? (
         <>
-          <p className="gci-range">
-            {money(sub.range_low)} – {money(sub.range_high)}
-          </p>
-          <p className="gci-hint">Draft seeded from county market data. Your edit is the price.</p>
+          <section className="ui-card mt-6 p-6">
+            <p className="font-display text-5xl font-bold tracking-tight tabular-nums text-ink">
+              {money(sub.range_low)} – {money(sub.range_high)}
+            </p>
+            <p className="mt-2 text-sm text-muted">
+              Draft seeded from county market data. Your edit is the price.
+            </p>
 
-          <h2>Why this range</h2>
-          <ul>
-            {drivers.map((d) => (
-              <li key={d.driver}>
-                {d.driver} · +{d.widen_amount_pct}% uncertainty
-              </li>
-            ))}
-          </ul>
-          <p>
-            <a className="gci-cta" href={`/app/lead/${id}/edit`}>
-              Edit to your prices →
-            </a>
-          </p>
+            <h2 className="mt-6 text-base font-bold text-ink">Why this range</h2>
+            <ul className="mt-3 space-y-2">
+              {drivers.map((d) => (
+                <li
+                  key={d.driver}
+                  className="flex items-center justify-between rounded-lg border border-line bg-bg px-3 py-2 text-sm"
+                >
+                  <span className="text-ink">{d.driver}</span>
+                  <span className="ui-chip">+{d.widen_amount_pct}% uncertainty</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-6">
+              <a className="ui-btn ui-btn-primary" href={`/app/lead/${id}/edit`}>
+                Edit to your prices →
+              </a>
+            </div>
+          </section>
           <SendBid
             versionId={sub.version_id}
             defaultName={sub.contact_name ?? ""}
@@ -104,34 +115,46 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
           />
         </>
       ) : (
-        <p className="gci-errors">
+        <p className="mt-6 rounded-xl border border-danger bg-accent-soft p-4 text-sm text-ink">
           This lead has no priced draft — generation didn&rsquo;t complete. The lead is
           safe; retry is coming with the editor.
         </p>
       )}
 
-      <h2>Scope</h2>
-      <p>
+      <h2 className="mt-10 text-lg font-bold text-ink">Scope</h2>
+      <div className="mt-3 flex flex-wrap gap-2">
         {toggles.map(([k, v]) => (
-          <span key={k} className="gci-chip">
+          <span
+            key={k}
+            className="inline-flex items-center rounded-full bg-raised px-3 py-1 text-sm font-medium text-muted"
+          >
             {k}
             {v.class ? ` · ${v.class.replace("_", " ")}` : " · class not chosen"}
           </span>
         ))}
-        {sub.finish_tier && <span className="gci-chip">finish: {sub.finish_tier}</span>}
-      </p>
+        {sub.finish_tier && (
+          <span className="inline-flex items-center rounded-full bg-raised px-3 py-1 text-sm font-medium text-muted">
+            finish: {sub.finish_tier}
+          </span>
+        )}
+      </div>
 
       {hints.length > 0 && (
-        <section className="gci-quarantine">
-          <h2>
-            From their description <span className="gci-badge">not priced</span>
+        <section className="ui-card mt-8 p-6">
+          <h2 className="flex items-center gap-2 text-lg font-bold text-ink">
+            From their description
+            <span className="inline-flex items-center rounded-full bg-raised px-2.5 py-0.5 text-xs font-semibold text-muted">
+              not priced
+            </span>
           </h2>
-          <ul>
+          <ul className="mt-4 space-y-3">
             {hints.map((h) => (
-              <li key={h.id}>
+              <li key={h.id} className="text-sm text-ink">
                 <strong>{h.kind === "risk_flag" ? "⚠ " : ""}</strong>
                 {h.text}
-                {h.source_excerpt && <div className="gci-hint">“{h.source_excerpt}”</div>}
+                {h.source_excerpt && (
+                  <div className="mt-1 text-sm text-faint">“{h.source_excerpt}”</div>
+                )}
               </li>
             ))}
           </ul>
@@ -139,13 +162,23 @@ export default async function LeadPage({ params }: { params: Promise<{ id: strin
       )}
 
       {photoIds.length > 0 && (
-        <section className="gci-lead-photos">
-          <h2>Photos from the homeowner</h2>
-          <div className="gci-photo-grid">
+        <section className="mt-8">
+          <h2 className="text-lg font-bold text-ink">Photos from the homeowner</h2>
+          <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4">
             {photoIds.map((pid) => (
-              <a key={pid} href={`/api/intake-photo/${pid}`} target="_blank" rel="noreferrer">
+              <a
+                key={pid}
+                href={`/api/intake-photo/${pid}`}
+                target="_blank"
+                rel="noreferrer"
+                className="overflow-hidden rounded-lg border border-line"
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={`/api/intake-photo/${pid}`} alt="homeowner photo" />
+                <img
+                  src={`/api/intake-photo/${pid}`}
+                  alt="homeowner photo"
+                  className="aspect-square w-full object-cover"
+                />
               </a>
             ))}
           </div>

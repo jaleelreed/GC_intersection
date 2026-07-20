@@ -59,18 +59,24 @@ export function SendBid({
 
   if (url) {
     return (
-      <section className="gci-sendbox">
-        <h2>Bid ready to share</h2>
-        <p className="gci-hint">
+      <section className="ui-card mt-6 p-6">
+        <h2 className="text-lg font-bold text-ink">Bid ready to share</h2>
+        <p className="mt-1 text-sm text-muted">
           {delivery === "sent"
             ? `Emailed to ${email}. You can also copy the link below.`
             : `Copy this link and send it to ${email}. They can view and accept it.`}
         </p>
-        <div className="gci-copyrow">
-          <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <input
+            data-testid="bid-link"
+            readOnly
+            value={url}
+            onFocus={(e) => e.currentTarget.select()}
+            className="ui-input flex-1 tabular-nums"
+          />
           <button
             type="button"
-            className="gci-primary"
+            className="ui-btn ui-btn-primary"
             onClick={() => {
               navigator.clipboard?.writeText(url);
               setCopied(true);
@@ -84,52 +90,54 @@ export function SendBid({
   }
 
   return (
-    <form className="gci-sendbox" onSubmit={send}>
-      <h2>Send the bid</h2>
+    <form className="ui-card mt-6 p-6" onSubmit={send}>
+      <h2 className="text-lg font-bold text-ink">Send the bid</h2>
       {error && (
-        <div className="gci-errors" role="alert">
+        <div className="mt-3 rounded-xl border border-danger bg-accent-soft p-4 text-sm text-ink" role="alert">
           <p>{error}</p>
         </div>
       )}
-      <label>
-        Recipient name
-        <input value={name} onChange={(e) => setName(e.target.value)} />
-      </label>
-      <label>
-        Recipient email
-        <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-      </label>
+      <div className="mt-4 space-y-4">
+        <label className="block">
+          <span className="ui-label">Recipient name</span>
+          <input value={name} onChange={(e) => setName(e.target.value)} className="ui-input" />
+        </label>
+        <label className="block">
+          <span className="ui-label">Recipient email</span>
+          <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="ui-input" />
+        </label>
+      </div>
 
-      <button type="button" className="gci-linkbtn" onClick={() => setShowMore(!showMore)}>
+      <button type="button" className="ui-btn ui-btn-quiet mt-3" onClick={() => setShowMore(!showMore)}>
         {showMore ? "Hide bid details" : "Add cover note, inclusions, terms…"}
       </button>
 
       {showMore && (
-        <div className="gci-bid-extra">
-          <label>
-            Cover note
-            <textarea rows={2} value={coverNote} onChange={(e) => setCoverNote(e.target.value)} placeholder="A short message to the homeowner" />
+        <div className="mt-3 space-y-4 rounded-xl border border-line bg-bg p-4">
+          <label className="block">
+            <span className="ui-label">Cover note</span>
+            <textarea rows={2} value={coverNote} onChange={(e) => setCoverNote(e.target.value)} placeholder="A short message to the homeowner" className="ui-input" />
           </label>
-          <label>
-            Included
-            <textarea rows={2} value={inclusions} onChange={(e) => setInclusions(e.target.value)} placeholder="What this price covers" />
+          <label className="block">
+            <span className="ui-label">Included</span>
+            <textarea rows={2} value={inclusions} onChange={(e) => setInclusions(e.target.value)} placeholder="What this price covers" className="ui-input" />
           </label>
-          <label>
-            Excluded
-            <textarea rows={2} value={exclusions} onChange={(e) => setExclusions(e.target.value)} placeholder="What it does not cover (permits, allowances, etc.)" />
+          <label className="block">
+            <span className="ui-label">Excluded</span>
+            <textarea rows={2} value={exclusions} onChange={(e) => setExclusions(e.target.value)} placeholder="What it does not cover (permits, allowances, etc.)" className="ui-input" />
           </label>
-          <label>
-            Terms
-            <textarea rows={2} value={terms} onChange={(e) => setTerms(e.target.value)} placeholder="Payment terms, warranty, conditions" />
+          <label className="block">
+            <span className="ui-label">Terms</span>
+            <textarea rows={2} value={terms} onChange={(e) => setTerms(e.target.value)} placeholder="Payment terms, warranty, conditions" className="ui-input" />
           </label>
-          <label>
-            Expires in (days)
-            <input type="number" min={1} max={365} value={expiresDays} onChange={(e) => setExpiresDays(e.target.value)} />
+          <label className="block">
+            <span className="ui-label">Expires in (days)</span>
+            <input type="number" min={1} max={365} value={expiresDays} onChange={(e) => setExpiresDays(e.target.value)} className="ui-input" />
           </label>
         </div>
       )}
 
-      <button type="submit" className="gci-primary" disabled={busy}>
+      <button type="submit" className="ui-btn ui-btn-primary mt-4" disabled={busy}>
         {busy ? "Preparing…" : "Create bid link"}
       </button>
     </form>

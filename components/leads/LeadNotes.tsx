@@ -30,27 +30,28 @@ export function LeadNotes({ leadId, initial }: { leadId: string; initial: LeadNo
   }
 
   return (
-    <section className="gci-notes">
-      <h2>Notes</h2>
-      <form onSubmit={add} className="gci-note-form">
+    <section className="ui-card p-6">
+      <h2 className="font-display text-lg font-bold">Notes</h2>
+      <form onSubmit={add} className="mt-4 flex flex-col gap-2">
         <textarea
+          className="ui-input"
           rows={2}
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder="Add a note — a call, a follow-up, a detail…"
         />
-        <button type="submit" className="gci-primary" disabled={busy || !text.trim()}>
+        <button type="submit" className="ui-btn ui-btn-primary self-end" disabled={busy || !text.trim()}>
           {busy ? "…" : "Add"}
         </button>
       </form>
-      <ul className="gci-note-list">
+      <ul className="mt-4 divide-y divide-line">
         {notes.map((n) => (
-          <li key={n.id}>
-            <div>{n.body}</div>
-            <div className="gci-hint">{new Date(n.created_at).toLocaleString()}</div>
+          <li key={n.id} className="py-3">
+            <div className="text-ink">{n.body}</div>
+            <div className="mt-1 text-sm text-muted">{new Date(n.created_at).toLocaleString()}</div>
           </li>
         ))}
-        {notes.length === 0 && <li className="gci-hint">No notes yet.</li>}
+        {notes.length === 0 && <li className="py-3 text-sm text-muted">No notes yet.</li>}
       </ul>
     </section>
   );

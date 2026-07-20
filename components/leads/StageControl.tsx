@@ -38,19 +38,30 @@ export function StageControl({ leadId, stage }: { leadId: string; stage: LeadSta
   }
 
   return (
-    <div className="gci-stages" role="group" aria-label="Lead stage">
-      {LEAD_STAGES.map((s) => (
-        <button
-          key={s}
-          type="button"
-          disabled={busy}
-          aria-pressed={current === s}
-          className={`gci-stage-btn ${current === s ? "sel" : ""} gci-stage-${s}`}
-          onClick={() => change(s)}
-        >
-          {LABEL[s]}
-        </button>
-      ))}
+    <div className="flex flex-wrap gap-2" role="group" aria-label="Lead stage">
+      {LEAD_STAGES.map((s) => {
+        const selected = current === s;
+        const selectedTone =
+          s === "won"
+            ? "border-transparent bg-positive text-white"
+            : s === "lost"
+              ? "border-transparent bg-danger text-white"
+              : "border-transparent bg-accent text-accent-foreground";
+        return (
+          <button
+            key={s}
+            type="button"
+            disabled={busy}
+            aria-pressed={current === s}
+            className={`ui-btn rounded-full px-4 text-sm ${
+              selected ? selectedTone : "border-line bg-surface text-muted hover:text-ink"
+            }`}
+            onClick={() => change(s)}
+          >
+            {LABEL[s]}
+          </button>
+        );
+      })}
     </div>
   );
 }

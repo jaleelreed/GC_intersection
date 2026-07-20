@@ -138,10 +138,10 @@ export function IntakeForm({ slug, variant }: { slug: string; variant: "link" | 
 
   if (done) {
     return (
-      <div className={`gci-form gci-${variant}`} data-state="done">
-        <h2>Sent.</h2>
-        <p>
-          They&rsquo;ll reach out at <strong>{contact.contact_email}</strong>.
+      <div className="ui-card ui-rise mx-auto max-w-2xl p-8 text-center" data-state="done">
+        <h2 className="font-display text-2xl font-bold text-ink">Sent.</h2>
+        <p className="mt-2 text-muted">
+          They&rsquo;ll reach out at <strong className="text-ink">{contact.contact_email}</strong>.
         </p>
       </div>
     );
@@ -151,23 +151,24 @@ export function IntakeForm({ slug, variant }: { slug: string; variant: "link" | 
 
   return (
     <form
-      className={`gci-form gci-${variant}`}
+      className="ui-card ui-rise mx-auto max-w-2xl p-6 sm:p-8"
       onSubmit={(e) => {
         e.preventDefault();
         if (step < 3) setStep(step + 1);
         else void submit();
       }}
     >
-      <ol className="gci-progress" aria-label="progress">
+      <ol className="mb-7 flex items-start gap-2" aria-label="progress">
         {steps.map((s, i) => (
-          <li key={s} aria-current={i === step ? "step" : undefined}>
-            {s}
+          <li key={s} aria-current={i === step ? "step" : undefined} className="flex flex-1 flex-col gap-1.5">
+            <span className={`h-1.5 rounded-full transition-colors ${i <= step ? "bg-accent" : "bg-line"}`} />
+            <span className={`text-xs font-semibold ${i === step ? "text-accent" : "text-faint"}`}>{s}</span>
           </li>
         ))}
       </ol>
 
       {errors.length > 0 && (
-        <div className="gci-errors" role="alert">
+        <div className="mb-5 rounded-xl border border-danger bg-danger/10 p-3 text-sm text-danger" role="alert">
           {errors.map((e, i) => (
             <p key={i}>{e.path ? `${e.path}: ` : ""}{e.message}</p>
           ))}
@@ -182,203 +183,218 @@ export function IntakeForm({ slug, variant }: { slug: string; variant: "link" | 
         </label>
       </div>
 
-      <section hidden={step !== 0}>
-        <label data-field="contact_name">
-          Your name
-          <input required={step === 0} value={contact.contact_name} onChange={(e) => setContact({ ...contact, contact_name: e.target.value })} />
+      <section hidden={step !== 0} className="space-y-4">
+        <label data-field="contact_name" className="block">
+          <span className="ui-label">Your name</span>
+          <input className="ui-input" required={step === 0} value={contact.contact_name} onChange={(e) => setContact({ ...contact, contact_name: e.target.value })} />
         </label>
-        <label data-field="contact_email">
-          Email
-          <input type="email" required={step === 0} value={contact.contact_email} onChange={(e) => setContact({ ...contact, contact_email: e.target.value })} />
+        <label data-field="contact_email" className="block">
+          <span className="ui-label">Email</span>
+          <input className="ui-input" type="email" required={step === 0} value={contact.contact_email} onChange={(e) => setContact({ ...contact, contact_email: e.target.value })} />
         </label>
-        <label data-field="contact_phone">
-          Phone <span className="gci-opt">(optional)</span>
-          <input type="tel" value={contact.contact_phone} onChange={(e) => setContact({ ...contact, contact_phone: e.target.value })} />
+        <label data-field="contact_phone" className="block">
+          <span className="ui-label">Phone <span className="font-normal text-faint">(optional)</span></span>
+          <input className="ui-input" type="tel" value={contact.contact_phone} onChange={(e) => setContact({ ...contact, contact_phone: e.target.value })} />
         </label>
-        <label data-field="address_line1">
-          Project address
-          <input required={step === 0} value={address.address_line1} onChange={(e) => setAddress({ ...address, address_line1: e.target.value })} />
+        <label data-field="address_line1" className="block">
+          <span className="ui-label">Project address</span>
+          <input className="ui-input" required={step === 0} value={address.address_line1} onChange={(e) => setAddress({ ...address, address_line1: e.target.value })} />
         </label>
-        <label data-field="address_line2">
-          Apt / unit <span className="gci-opt">(optional)</span>
-          <input value={address.address_line2} onChange={(e) => setAddress({ ...address, address_line2: e.target.value })} />
+        <label data-field="address_line2" className="block">
+          <span className="ui-label">Apt / unit <span className="font-normal text-faint">(optional)</span></span>
+          <input className="ui-input" value={address.address_line2} onChange={(e) => setAddress({ ...address, address_line2: e.target.value })} />
         </label>
-        <div className="gci-row">
-          <label data-field="city">
-            City
-            <input required={step === 0} value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} />
+        <div className="grid grid-cols-3 gap-3">
+          <label data-field="city" className="block">
+            <span className="ui-label">City</span>
+            <input className="ui-input" required={step === 0} value={address.city} onChange={(e) => setAddress({ ...address, city: e.target.value })} />
           </label>
-          <label data-field="state">
-            State
-            <input required={step === 0} maxLength={2} value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })} />
+          <label data-field="state" className="block">
+            <span className="ui-label">State</span>
+            <input className="ui-input" required={step === 0} maxLength={2} value={address.state} onChange={(e) => setAddress({ ...address, state: e.target.value })} />
           </label>
-          <label data-field="postal_code">
-            Zip
-            <input required={step === 0} value={address.postal_code} onChange={(e) => setAddress({ ...address, postal_code: e.target.value })} />
+          <label data-field="postal_code" className="block">
+            <span className="ui-label">Zip</span>
+            <input className="ui-input" required={step === 0} value={address.postal_code} onChange={(e) => setAddress({ ...address, postal_code: e.target.value })} />
           </label>
         </div>
       </section>
 
-      <section hidden={step !== 1}>
-        <p className="gci-hint">Tap everything this project touches.</p>
-        <div className="gci-toggles">
-          {SCOPE_TOGGLES.map((t) => {
-            const st = toggles[t.key];
-            return (
-              <div key={t.key} data-toggle={t.key} data-field={`toggle_${t.key}`} className={`gci-toggle ${st.on ? "on" : ""}`}>
-                <button
-                  type="button"
-                  aria-pressed={st.on}
-                  onClick={() => setToggles({ ...toggles, [t.key]: { on: !st.on, class: null } })}
-                >
-                  {t.label}
-                </button>
-                {st.on && (
-                  <div className="gci-classes" role="group" aria-label={`${t.label} scope`}>
-                    {SCOPE_CLASSES.map((c) => (
+      <section hidden={step !== 1} className="space-y-6">
+        <div>
+          <p className="mb-2 text-sm text-muted">Tap everything this project touches.</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {SCOPE_TOGGLES.map((t) => {
+              const st = toggles[t.key];
+              return (
+                <div key={t.key} data-toggle={t.key} data-field={`toggle_${t.key}`} className={st.on ? "col-span-2 sm:col-span-3" : ""}>
+                  <button
+                    type="button"
+                    aria-pressed={st.on}
+                    onClick={() => setToggles({ ...toggles, [t.key]: { on: !st.on, class: null } })}
+                    className={`w-full rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${st.on ? "border-accent bg-accent text-accent-foreground" : "border-line bg-surface text-ink hover:border-faint"}`}
+                  >
+                    {t.label}
+                  </button>
+                  {st.on && (
+                    <div className="mt-2 flex flex-wrap gap-1.5" role="group" aria-label={`${t.label} scope`}>
+                      {SCOPE_CLASSES.map((c) => (
+                        <button
+                          key={c.key}
+                          type="button"
+                          className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${st.class === c.key ? "border-accent bg-accent-soft text-accent" : "border-line bg-surface text-muted hover:border-faint"}`}
+                          onClick={() => setToggles({ ...toggles, [t.key]: { on: true, class: c.key } })}
+                        >
+                          {c.label}
+                        </button>
+                      ))}
                       <button
-                        key={c.key}
                         type="button"
-                        className={st.class === c.key ? "sel" : ""}
-                        onClick={() => setToggles({ ...toggles, [t.key]: { on: true, class: c.key } })}
+                        className={`rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors ${st.class === null ? "border-accent bg-accent-soft text-accent" : "border-line bg-surface text-muted hover:border-faint"}`}
+                        onClick={() => setToggles({ ...toggles, [t.key]: { on: true, class: null } })}
                       >
-                        {c.label}
+                        Not sure
                       </button>
-                    ))}
-                    <button
-                      type="button"
-                      className={st.class === null ? "sel" : ""}
-                      onClick={() => setToggles({ ...toggles, [t.key]: { on: true, class: null } })}
-                    >
-                      Not sure
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <fieldset data-field="structural_flags">
-          <legend>Any of these?</legend>
-          {STRUCTURAL_FLAGS.map((f) => (
-            <label key={f.key} className="gci-check">
-              <input
-                type="checkbox"
-                checked={structural[f.key] ?? false}
-                onChange={(e) => setStructural({ ...structural, [f.key]: e.target.checked })}
-              />
-              {f.label}
-            </label>
-          ))}
+        <fieldset data-field="structural_flags" className="border-0 p-0">
+          <legend className="ui-label">Any of these?</legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {STRUCTURAL_FLAGS.map((f) => (
+              <label key={f.key} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-line bg-surface px-3 py-2 text-sm transition-colors hover:border-faint has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+                <input
+                  type="checkbox"
+                  className="accent-[var(--accent)]"
+                  checked={structural[f.key] ?? false}
+                  onChange={(e) => setStructural({ ...structural, [f.key]: e.target.checked })}
+                />
+                {f.label}
+              </label>
+            ))}
+          </div>
         </fieldset>
-        <fieldset data-field="finish_tier">
-          <legend>Finish level</legend>
-          {[
-            { key: "economy", label: "Keep it simple" },
-            { key: "mid", label: "Solid mid-grade" },
-            { key: "custom", label: "High-end / custom" },
-          ].map((t) => (
-            <label key={t.key} className="gci-check">
-              <input type="radio" name="finish_tier" checked={tier === t.key} onChange={() => setTier(t.key)} />
-              {t.label}
-            </label>
-          ))}
-          <p className="gci-hint">{SKIP_COPY}</p>
+        <fieldset data-field="finish_tier" className="border-0 p-0">
+          <legend className="ui-label">Finish level</legend>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {[
+              { key: "economy", label: "Keep it simple" },
+              { key: "mid", label: "Solid mid-grade" },
+              { key: "custom", label: "High-end / custom" },
+            ].map((t) => (
+              <label key={t.key} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-line bg-surface px-3 py-2 text-sm transition-colors hover:border-faint has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+                <input type="radio" className="accent-[var(--accent)]" name="finish_tier" checked={tier === t.key} onChange={() => setTier(t.key)} />
+                {t.label}
+              </label>
+            ))}
+          </div>
+          <p className="mt-2 text-sm text-muted">{SKIP_COPY}</p>
         </fieldset>
       </section>
 
-      <section hidden={step !== 2}>
-        <label data-field="square_footage">
-          Square footage <span className="gci-opt">(approximate is fine)</span>
-          <input type="number" min={1} required={step === 2} value={sqft} onChange={(e) => setSqft(e.target.value)} />
+      <section hidden={step !== 2} className="space-y-4">
+        <label data-field="square_footage" className="block">
+          <span className="ui-label">Square footage <span className="font-normal text-faint">(approximate is fine)</span></span>
+          <input className="ui-input" type="number" min={1} required={step === 2} value={sqft} onChange={(e) => setSqft(e.target.value)} />
         </label>
-        <div className="gci-row">
-          <label data-field="existing_beds">
-            Beds now
-            <input type="number" min={0} value={existing.beds} onChange={(e) => setExisting({ ...existing, beds: e.target.value })} />
+        <div className="grid grid-cols-3 gap-3">
+          <label data-field="existing_beds" className="block">
+            <span className="ui-label">Beds now</span>
+            <input className="ui-input" type="number" min={0} value={existing.beds} onChange={(e) => setExisting({ ...existing, beds: e.target.value })} />
           </label>
-          <label data-field="existing_full_baths">
-            Full baths now
-            <input type="number" min={0} value={existing.full_baths} onChange={(e) => setExisting({ ...existing, full_baths: e.target.value })} />
+          <label data-field="existing_full_baths" className="block">
+            <span className="ui-label">Full baths now</span>
+            <input className="ui-input" type="number" min={0} value={existing.full_baths} onChange={(e) => setExisting({ ...existing, full_baths: e.target.value })} />
           </label>
-          <label data-field="existing_half_baths">
-            Half baths now
-            <input type="number" min={0} value={existing.half_baths} onChange={(e) => setExisting({ ...existing, half_baths: e.target.value })} />
+          <label data-field="existing_half_baths" className="block">
+            <span className="ui-label">Half baths now</span>
+            <input className="ui-input" type="number" min={0} value={existing.half_baths} onChange={(e) => setExisting({ ...existing, half_baths: e.target.value })} />
           </label>
         </div>
-        <div className="gci-row">
-          <label data-field="target_beds">
-            Beds after
-            <input type="number" min={0} value={target.beds} onChange={(e) => setTarget({ ...target, beds: e.target.value })} />
+        <div className="grid grid-cols-3 gap-3">
+          <label data-field="target_beds" className="block">
+            <span className="ui-label">Beds after</span>
+            <input className="ui-input" type="number" min={0} value={target.beds} onChange={(e) => setTarget({ ...target, beds: e.target.value })} />
           </label>
-          <label data-field="target_full_baths">
-            Full baths after
-            <input type="number" min={0} value={target.full_baths} onChange={(e) => setTarget({ ...target, full_baths: e.target.value })} />
+          <label data-field="target_full_baths" className="block">
+            <span className="ui-label">Full baths after</span>
+            <input className="ui-input" type="number" min={0} value={target.full_baths} onChange={(e) => setTarget({ ...target, full_baths: e.target.value })} />
           </label>
-          <label data-field="target_half_baths">
-            Half baths after
-            <input type="number" min={0} value={target.half_baths} onChange={(e) => setTarget({ ...target, half_baths: e.target.value })} />
+          <label data-field="target_half_baths" className="block">
+            <span className="ui-label">Half baths after</span>
+            <input className="ui-input" type="number" min={0} value={target.half_baths} onChange={(e) => setTarget({ ...target, half_baths: e.target.value })} />
           </label>
         </div>
-        <label data-field="year_built">
-          Year built <span className="gci-opt">(skip if unsure)</span>
-          <input type="number" value={conditions.year_built} onChange={(e) => setConditions({ ...conditions, year_built: e.target.value })} />
+        <label data-field="year_built" className="block">
+          <span className="ui-label">Year built <span className="font-normal text-faint">(skip if unsure)</span></span>
+          <input className="ui-input" type="number" value={conditions.year_built} onChange={(e) => setConditions({ ...conditions, year_built: e.target.value })} />
         </label>
-        <fieldset data-field="occupied">
-          <legend>Living there during the work?</legend>
-          {["yes", "no"].map((v) => (
-            <label key={v} className="gci-check">
-              <input type="radio" name="occupied" checked={conditions.occupied === v} onChange={() => setConditions({ ...conditions, occupied: v })} />
-              {v === "yes" ? "Yes" : "No"}
-            </label>
-          ))}
+        <fieldset data-field="occupied" className="border-0 p-0">
+          <legend className="ui-label">Living there during the work?</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {["yes", "no"].map((v) => (
+              <label key={v} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-line bg-surface px-3 py-2 text-sm transition-colors hover:border-faint has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+                <input type="radio" className="accent-[var(--accent)]" name="occupied" checked={conditions.occupied === v} onChange={() => setConditions({ ...conditions, occupied: v })} />
+                {v === "yes" ? "Yes" : "No"}
+              </label>
+            ))}
+          </div>
         </fieldset>
-        <fieldset data-field="access">
-          <legend>How easy is access?</legend>
-          {[
-            { key: "easy", label: "Easy — driveway, clear paths" },
-            { key: "moderate", label: "Moderate" },
-            { key: "difficult", label: "Tight — city street, stairs" },
-          ].map((a) => (
-            <label key={a.key} className="gci-check">
-              <input type="radio" name="access" checked={conditions.access === a.key} onChange={() => setConditions({ ...conditions, access: a.key })} />
-              {a.label}
-            </label>
-          ))}
+        <fieldset data-field="access" className="border-0 p-0">
+          <legend className="ui-label">How easy is access?</legend>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {[
+              { key: "easy", label: "Easy — driveway, clear paths" },
+              { key: "moderate", label: "Moderate" },
+              { key: "difficult", label: "Tight — city street, stairs" },
+            ].map((a) => (
+              <label key={a.key} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-line bg-surface px-3 py-2 text-sm transition-colors hover:border-faint has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+                <input type="radio" className="accent-[var(--accent)]" name="access" checked={conditions.access === a.key} onChange={() => setConditions({ ...conditions, access: a.key })} />
+                {a.label}
+              </label>
+            ))}
+          </div>
         </fieldset>
-        <fieldset data-field="known_problems">
-          <legend>Known problems</legend>
-          {KNOWN_PROBLEMS.map((p) => (
-            <label key={p.key} className="gci-check">
-              <input
-                type="checkbox"
-                checked={problems.includes(p.key)}
-                onChange={(e) =>
-                  setProblems(e.target.checked ? [...problems, p.key] : problems.filter((x) => x !== p.key))
-                }
-              />
-              {p.label}
-            </label>
-          ))}
-          <p className="gci-hint">{SKIP_COPY}</p>
+        <fieldset data-field="known_problems" className="border-0 p-0">
+          <legend className="ui-label">Known problems</legend>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {KNOWN_PROBLEMS.map((p) => (
+              <label key={p.key} className="flex cursor-pointer items-center gap-2.5 rounded-lg border border-line bg-surface px-3 py-2 text-sm transition-colors hover:border-faint has-[:checked]:border-accent has-[:checked]:bg-accent-soft">
+                <input
+                  type="checkbox"
+                  className="accent-[var(--accent)]"
+                  checked={problems.includes(p.key)}
+                  onChange={(e) =>
+                    setProblems(e.target.checked ? [...problems, p.key] : problems.filter((x) => x !== p.key))
+                  }
+                />
+                {p.label}
+              </label>
+            ))}
+          </div>
+          <p className="mt-2 text-sm text-muted">{SKIP_COPY}</p>
         </fieldset>
       </section>
 
-      <section hidden={step !== 3}>
-        <label data-field="narrative">
-          Describe what you&rsquo;re hoping to do <span className="gci-opt">(optional)</span>
-          <textarea rows={6} maxLength={2000} value={narrative} onChange={(e) => setNarrative(e.target.value)} />
+      <section hidden={step !== 3} className="space-y-4">
+        <label data-field="narrative" className="block">
+          <span className="ui-label">Describe what you&rsquo;re hoping to do <span className="font-normal text-faint">(optional)</span></span>
+          <textarea className="ui-input" rows={6} maxLength={2000} value={narrative} onChange={(e) => setNarrative(e.target.value)} />
         </label>
         <PhotoUpload photos={photos} setPhotos={setPhotos} />
       </section>
 
-      <div className="gci-nav">
+      <div className="mt-7 flex items-center gap-3 border-t border-line pt-5">
         {step > 0 && (
-          <button type="button" onClick={() => setStep(step - 1)}>
+          <button type="button" onClick={() => setStep(step - 1)} className="ui-btn ui-btn-ghost">
             Back
           </button>
         )}
-        <button type="submit" disabled={submitting} className="gci-primary">
+        <button type="submit" disabled={submitting} className="ui-btn ui-btn-primary ml-auto">
           {step < 3 ? "Next" : submitting ? "Sending…" : "Send"}
         </button>
       </div>

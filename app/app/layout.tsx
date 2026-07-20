@@ -16,7 +16,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const ws = (await resolveWorkspace(user.email)) ?? (await ensureWorkspace(user.email, user.name));
 
   return (
-    <div className="gci-app">
+    <div className="min-h-dvh bg-bg text-ink">
       <AppNav orgName={ws.orgName} email={user.email} />
       {children}
     </div>
