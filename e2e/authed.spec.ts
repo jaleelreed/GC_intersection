@@ -14,6 +14,15 @@ test("GC signs in, edits a lead's estimate, sends a bid, buyer accepts", async (
     { name: "e2e_auth", value: SECRET!, domain: "localhost", path: "/" },
     { name: "e2e_email", value: FIXTURE_GC_EMAIL, domain: "localhost", path: "/" },
   ]);
+  // Suppress the first-run onboarding modal so it can't intercept the journey
+  // (it has its own dedicated coverage below).
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem("bideasy_onboarding", "seen");
+    } catch {
+      /* ignore */
+    }
+  });
 
   // Seed a fresh lead through the public intake API (lands in the fixture org).
   const email = `authed-${Date.now()}@intake-test.example`;
@@ -66,4 +75,35 @@ test("GC signs in, edits a lead's estimate, sends a bid, buyer accepts", async (
   await buyer.getByRole("button", { name: "Accept this bid" }).click();
   await buyer.getByRole("button", { name: "Yes, accept this bid" }).click();
   await expect(buyer.getByText("You accepted this bid")).toBeVisible({ timeout: 15_000 });
+});
+
+test("first-run onboarding shows + dismisses; side nav toggles", async ({ page, context }) => {
+  await context.addCookies([
+    { name: "e2e_auth", value: SECRET!, domain: "localhost", path: "/" },
+    { name: "e2e_email", value: FIXTURE_GC_EMAIL, domain: "localhost", path: "/" },
+  ]);
+
+  await page.goto("/app");
+
+  // First-run BidEasy onboarding auto-opens on the dashboard.
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Welcome to BidEasy")).toBeVisible();
+  // Paginates, then dismisses (Escape closes and marks it seen).
+  await page.getByRole("button", { name: "Next" }).click();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+
+  // Re-openable from the Help control.
+  await page.getByRole("button", { name: "How BidEasy works" }).click();
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+
+  // Active route reflected on the nav, then the side nav collapses on toggle.
+  await expect(page.getByRole("link", { name: "Leads" })).toHaveAttribute("aria-current", "page");
+  const toggle = page.getByRole("button", { name: "Toggle navigation" });
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
 });

@@ -27,10 +27,11 @@ export async function getAuth(): Promise<NeonAuth> {
 }
 
 export async function currentUserEmail(): Promise<{ email: string; name: string | null } | null> {
-  // E2E auth bypass — ONLY when E2E_AUTH_SECRET is set (the CI e2e job); never
-  // set in production, so this path is inert there. Lets Playwright exercise
-  // the authenticated journeys that OTP can't automate.
-  if (process.env.E2E_AUTH_SECRET) {
+  // E2E auth bypass — ONLY for the CI e2e job (E2E_AUTH_SECRET set). Defense in
+  // depth: even if that secret were ever present in a real deployment, the
+  // VERCEL_ENV==="production" guard keeps this path structurally inert in prod.
+  // CI never sets VERCEL_ENV, so the bypass still works there.
+  if (process.env.E2E_AUTH_SECRET && process.env.VERCEL_ENV !== "production") {
     try {
       const { cookies } = await import("next/headers");
       const c = await cookies();
