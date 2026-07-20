@@ -36,7 +36,7 @@ export async function convergenceSummary(orgId: string): Promise<ConvergenceSumm
   let coverageSum = 0;
   let coverageN = 0;
   for (const e of edited) {
-    const m = await editMetrics(e.first_id, e.latest_id);
+    const m = await editMetrics(orgId, e.first_id, e.latest_id);
     if (m.priorLines > 0) {
       coverageSum += m.editCoverage;
       coverageN += 1;

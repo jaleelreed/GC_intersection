@@ -110,7 +110,7 @@ d("the convergence loop", () => {
     expect(harvested.source_observation_id).not.toBeNull();
 
     // US-022: metrics over lineage.
-    const m = await editMetrics(first.version_id, newVersionId);
+    const m = await editMetrics("00000000-0000-4000-8000-000000000001", first.version_id, newVersionId);
     expect(m.touched).toBe(1);
     expect(m.editCoverage).toBeGreaterThan(0);
     expect(m.editCoverage).toBeLessThan(0.34); // one line of many

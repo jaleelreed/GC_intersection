@@ -1,6 +1,6 @@
 // Read side for the editor + reveal: the current version of a lead's
 // estimate, org-scoped (a GC never reads another org's estimate).
-import { getPool } from "../db";
+import { getPool, orgQuery } from "../db";
 
 export interface EditorLine {
   lineage_id: string;
@@ -102,7 +102,8 @@ export async function coverageGaps(submissionId: string, orgId: string): Promise
   if (onToggles.length === 0) return [];
 
   const covered = (
-    await getPool().query(
+    await orgQuery(
+      orgId,
       `SELECT DISTINCT m.scope_toggle
        FROM estimate_lines l
        JOIN scope_assembly_map m ON m.assembly_id = l.assembly_id AND m.deleted_at IS NULL
@@ -133,7 +134,8 @@ export async function currentEstimateForLead(
   if (!head) return null;
 
   const lines = (
-    await getPool().query(
+    await orgQuery<EditorLine>(
+      orgId,
       `SELECT l.lineage_id, c.code AS cost_code, c.csi_division AS division,
               l.description, l.quantity, l.uom, l.unit_cost, l.total, l.seed_source,
               l.is_allowance, l.is_alternate
