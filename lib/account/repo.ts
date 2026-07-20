@@ -1,10 +1,10 @@
 // Data export + workspace deletion (privacy controls). Owner-only, org-scoped.
-import { getPool } from "../db";
+import { getPool, orgQuery } from "../db";
 
 /** Export the workspace's data as a plain object (JSON download). */
 export async function exportWorkspace(orgId: string): Promise<Record<string, unknown>> {
-  const pool = getPool();
-  const q = async (sql: string) => (await pool.query(sql, [orgId])).rows;
+  // Each read runs under the org's RLS context (cost_items is FORCE-RLS'd).
+  const q = async (sql: string) => (await orgQuery(orgId, sql, [orgId])).rows;
   return {
     exported_at_note: "generated on request",
     organization: await q(`SELECT id, name, org_kind, created_at FROM organizations WHERE id = $1`),

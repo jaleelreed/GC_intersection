@@ -107,3 +107,19 @@ test("first-run onboarding shows + dismisses; side nav toggles", async ({ page, 
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
 });
+
+test("a brand-new email is provisioned on first /app visit (cost_items clone under RLS)", async ({ page, context }) => {
+  // A fresh identity triggers ensureWorkspace, which clones the starter rate
+  // library (FORCE-RLS'd cost_items) from the template org into the new org.
+  // Under the non-superuser owner role CI runs as, this only succeeds if the
+  // clone reads the template + writes the new org each under its own org
+  // context — so a rendered shell here is the proof it works.
+  const freshEmail = `newgc-${Date.now()}@example.com`;
+  await context.addCookies([
+    { name: "e2e_auth", value: SECRET!, domain: "localhost", path: "/" },
+    { name: "e2e_email", value: freshEmail, domain: "localhost", path: "/" },
+  ]);
+  await page.goto("/app");
+  await expect(page.getByRole("button", { name: "Toggle navigation" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText("Welcome to BidEasy")).toBeVisible();
+});

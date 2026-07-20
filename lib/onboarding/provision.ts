@@ -9,24 +9,39 @@
 // neutral structure is copied; the numbers become the new org's own to edit.
 import { randomBytes } from "node:crypto";
 import type { PoolClient } from "pg";
-import { getPool } from "../db";
+import { getPool, setOrg, withOrg } from "../db";
 import type { Workspace } from "../workspace";
 
 const TEMPLATE_ORG_ID = "00000000-0000-4000-8000-000000000001";
 
-async function cloneEstimatingConfig(client: PoolClient, fromOrg: string, toOrg: string): Promise<void> {
-  // cost_items catalog (manual rows only — never harvested/learned costs).
+// cost_items is FORCE-RLS'd, so the template catalog must be read under the
+// TEMPLATE org's context; the new org's rows are then written under the new
+// org's context (set on the provisioning client). The other cloned tables are
+// not FORCE'd, so their cross-org copy still works under the new org's context.
+async function readTemplateCostItems(fromOrg: string): Promise<Record<string, unknown>[]> {
+  return withOrg(fromOrg, async (c) =>
+    (
+      await c.query(
+        `SELECT id, code, name, cost_code_id, uom, labor_unit_cost, material_unit_cost,
+                equipment_unit_cost, sub_unit_cost, productivity_rate, msa_code
+         FROM cost_items
+         WHERE org_id = $1 AND source = 'manual' AND deleted_at IS NULL`,
+        [fromOrg]
+      )
+    ).rows
+  );
+}
+
+async function cloneEstimatingConfig(
+  client: PoolClient,
+  fromOrg: string,
+  toOrg: string,
+  catalog: Record<string, unknown>[]
+): Promise<void> {
+  // cost_items catalog (manual rows only — never harvested/learned costs),
+  // prefetched from the template under its own org context.
   const costItemMap = new Map<string, string>();
-  const catalog = (
-    await client.query(
-      `SELECT id, code, name, cost_code_id, uom, labor_unit_cost, material_unit_cost,
-              equipment_unit_cost, sub_unit_cost, productivity_rate, msa_code
-       FROM cost_items
-       WHERE org_id = $1 AND source = 'manual' AND deleted_at IS NULL`,
-      [fromOrg]
-    )
-  ).rows;
-  for (const c of catalog) {
+  for (const c of catalog as Array<Record<string, string>>) {
     const r = await client.query(
       `INSERT INTO cost_items (org_id, code, name, cost_code_id, uom, labor_unit_cost,
          material_unit_cost, equipment_unit_cost, sub_unit_cost, productivity_rate, source, msa_code)
@@ -168,7 +183,11 @@ export async function ensureWorkspace(email: string, name: string | null): Promi
       [orgId, slug, orgName]
     );
 
-    await cloneEstimatingConfig(client, TEMPLATE_ORG_ID, orgId);
+    // Read the FORCE-RLS'd cost_items catalog under the template's context,
+    // then write the new org's config under the new org's context.
+    const templateCatalog = await readTemplateCostItems(TEMPLATE_ORG_ID);
+    await setOrg(client, orgId);
+    await cloneEstimatingConfig(client, TEMPLATE_ORG_ID, orgId, templateCatalog);
 
     await client.query("COMMIT");
     return { userId, orgId, orgName, role: "owner_admin" };

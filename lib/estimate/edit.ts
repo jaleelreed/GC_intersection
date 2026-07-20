@@ -5,7 +5,7 @@
 //   feasibility dimensions of the job it came from.
 // US-020: observations harvest into org cost_items (source_observation_id).
 // D7 stands behind everything: the DB trigger refuses writes to locked versions.
-import { getPool } from "../db";
+import { getPool, setOrg } from "../db";
 import { toScaled, mulScaled, scaledToCentsString, scaledToString } from "./money";
 import { assertConvertibleLine } from "./lines";
 
@@ -65,6 +65,8 @@ export async function editIntoNewVersion(
       )
     ).rows[0];
     if (!src) throw new Error("version not found");
+    // Set the org context for the FORCE-RLS'd cost_items harvest write below.
+    await setOrg(client, src.org_id);
 
     const next = (
       await client.query(
