@@ -3,7 +3,7 @@
 // and THE D7 FREEZE: acceptance locks the estimate version at the database
 // layer (US-025). D6: no payment objects exist, by design.
 import { createHash, randomBytes } from "node:crypto";
-import { getPool, setOrg } from "../db";
+import { getPool, setOrg, orgQuery } from "../db";
 import { audit } from "../audit/repo";
 
 // US-018/US-026: the machine. Decline is now DEFINED (Gap 7): a buyer may
@@ -138,14 +138,27 @@ export interface BidLine {
  * never cost-code internals. Read-only, no state change.
  */
 export async function bidLinesForToken(rawToken: string): Promise<BidLine[]> {
-  const r = await getPool().query(
+  const hash = hashToken(rawToken);
+  // The token tables are not FORCE-RLS'd (the unguessable token is the buyer's
+  // authorization); resolve the org from the token, then read the FORCE-RLS'd
+  // estimate lines under that org's context.
+  const org = (
+    await getPool().query(
+      `SELECT org_id FROM proposal_access_tokens
+       WHERE token_hash = $1 AND revoked_at IS NULL AND expires_at > now() AND deleted_at IS NULL`,
+      [hash]
+    )
+  ).rows[0];
+  if (!org) return [];
+  const r = await orgQuery<BidLine>(
+    org.org_id,
     `SELECT l.description, l.total, l.is_allowance, l.is_alternate
      FROM proposal_access_tokens t
      JOIN proposals p ON p.id = t.proposal_id AND p.deleted_at IS NULL
      JOIN estimate_lines l ON l.estimate_version_id = p.estimate_version_id AND l.deleted_at IS NULL
      WHERE t.token_hash = $1 AND t.revoked_at IS NULL AND t.expires_at > now() AND t.deleted_at IS NULL
      ORDER BY l.is_alternate, l.sort_order`,
-    [hashToken(rawToken)]
+    [hash]
   );
   return r.rows;
 }

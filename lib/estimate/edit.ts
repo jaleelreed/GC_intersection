@@ -5,7 +5,7 @@
 //   feasibility dimensions of the job it came from.
 // US-020: observations harvest into org cost_items (source_observation_id).
 // D7 stands behind everything: the DB trigger refuses writes to locked versions.
-import { getPool, setOrg } from "../db";
+import { getPool, setOrg, orgQuery } from "../db";
 import { toScaled, mulScaled, scaledToCentsString, scaledToString } from "./money";
 import { assertConvertibleLine } from "./lines";
 
@@ -312,10 +312,12 @@ export async function editIntoNewVersion(
  * the trust-floor metric (D10: wide launch when < 1/3 for a friendly's jobs).
  */
 export async function editMetrics(
+  orgId: string,
   fromVersionId: string,
   toVersionId: string
 ): Promise<{ priorLines: number; touched: number; editCoverage: number }> {
-  const r = await getPool().query(
+  const r = await orgQuery(
+    orgId,
     `SELECT
        count(a.lineage_id)::int AS prior,
        count(b.lineage_id) FILTER (
