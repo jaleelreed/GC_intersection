@@ -50,24 +50,26 @@ export function AccountControls({ orgName }: { orgName: string }) {
   }
 
   return (
-    <section className="gci-share">
-      <h2>Your data</h2>
-      <button type="button" className="gci-btn" onClick={exportData} disabled={busy}>
-        Export workspace data (JSON)
-      </button>
+    <section className="mt-6 space-y-6">
+      <div className="ui-card p-6">
+        <h2 className="font-display text-lg font-bold text-ink">Your data</h2>
+        <button type="button" className="ui-btn ui-btn-ghost mt-4" onClick={exportData} disabled={busy}>
+          Export workspace data (JSON)
+        </button>
+      </div>
 
-      <div className="gci-danger">
-        <h3>Delete workspace</h3>
-        <p className="gci-hint">
+      <div className="ui-card border-danger p-6">
+        <h3 className="font-display text-lg font-bold text-danger">Delete workspace</h3>
+        <p className="mt-1 text-sm text-muted">
           Permanently removes this workspace and all its projects, estimates, and learned
-          pricing. This cannot be undone. Type <strong>{orgName}</strong> to confirm.
+          pricing. This cannot be undone. Type <strong className="text-ink">{orgName}</strong> to confirm.
         </p>
-        {error && <div className="gci-errors" role="alert"><p>{error}</p></div>}
-        <div className="gci-copyrow">
-          <input value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder={orgName} />
+        {error && <div className="mt-3 rounded-xl border border-danger bg-surface p-3 text-danger" role="alert"><p>{error}</p></div>}
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <input className="ui-input flex-1" value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder={orgName} />
           <button
             type="button"
-            className="gci-declinebtn"
+            className="ui-btn bg-danger text-white"
             disabled={busy || confirm !== orgName}
             onClick={deleteWs}
           >

@@ -35,7 +35,7 @@ export function RateLibrary({ rates }: { rates: Rate[] }) {
 
   if (rates.length === 0) {
     return (
-      <p className="gci-hint">
+      <p className="mt-6 text-muted">
         No learned rates yet. Edit a draft&rsquo;s prices and your numbers appear here — the
         engine uses them on future drafts, and you can adjust or revert them any time.
       </p>
@@ -43,38 +43,45 @@ export function RateLibrary({ rates }: { rates: Rate[] }) {
   }
 
   return (
-    <table className="gci-bidlines">
-      <thead>
-        <tr><th>Item</th><th>Code</th><th className="num">Your unit ($/{"{uom}"})</th><th></th></tr>
-      </thead>
-      <tbody>
-        {rates.map((r) => (
-          <tr key={r.id}>
-            <td>{r.name}</td>
-            <td>{r.cost_code ?? "—"}</td>
-            <td className="num">
-              <input
-                inputMode="decimal"
-                value={edits[r.id] ?? ""}
-                onChange={(e) => setEdits((s) => ({ ...s, [r.id]: e.target.value.replace(/[^0-9.]/g, "") }))}
-                aria-label={`unit price for ${r.name}`}
-                style={{ width: 90, textAlign: "right" }}
-              />
-              <span className="gci-hint"> /{r.uom}</span>
-            </td>
-            <td>
-              <button type="button" className="gci-linkbtn" disabled={busy}
-                onClick={() => post({ action: "update", id: r.id, unit_cost: edits[r.id] })}>
-                Save
-              </button>
-              <button type="button" className="gci-linkbtn" disabled={busy}
-                onClick={() => post({ action: "delete", id: r.id })}>
-                Revert
-              </button>
-            </td>
+    <div className="ui-card mt-6 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-line text-left text-muted">
+            <th className="px-4 py-3 font-semibold">Item</th>
+            <th className="px-4 py-3 font-semibold">Code</th>
+            <th className="px-4 py-3 text-right font-semibold">Your unit ($/{"{uom}"})</th>
+            <th className="px-4 py-3"></th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody className="divide-y divide-line">
+          {rates.map((r) => (
+            <tr key={r.id}>
+              <td className="px-4 py-3 text-ink">{r.name}</td>
+              <td className="px-4 py-3 text-muted">{r.cost_code ?? "—"}</td>
+              <td className="px-4 py-3 text-right">
+                <input
+                  className="ui-input inline-block w-24 text-right tabular-nums"
+                  inputMode="decimal"
+                  value={edits[r.id] ?? ""}
+                  onChange={(e) => setEdits((s) => ({ ...s, [r.id]: e.target.value.replace(/[^0-9.]/g, "") }))}
+                  aria-label={`unit price for ${r.name}`}
+                />
+                <span className="text-muted"> /{r.uom}</span>
+              </td>
+              <td className="px-4 py-3 text-right whitespace-nowrap">
+                <button type="button" className="ui-btn ui-btn-quiet text-accent" disabled={busy}
+                  onClick={() => post({ action: "update", id: r.id, unit_cost: edits[r.id] })}>
+                  Save
+                </button>
+                <button type="button" className="ui-btn ui-btn-quiet" disabled={busy}
+                  onClick={() => post({ action: "delete", id: r.id })}>
+                  Revert
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
   );
 }

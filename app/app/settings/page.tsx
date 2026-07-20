@@ -17,11 +17,11 @@ export default async function SettingsPage() {
   ]);
 
   return (
-    <main className="gci-page">
-      <p className="gci-back"><a href="/app">← Leads</a></p>
-      <h1>Settings</h1>
+    <main className="ui-rise mx-auto max-w-2xl px-5 py-8">
+      <p className="mb-4 text-sm"><a href="/app" className="text-muted hover:text-ink">← Leads</a></p>
+      <h1 className="font-display text-3xl font-bold text-ink">Settings</h1>
       {ws.role !== "owner_admin" ? (
-        <p className="gci-hint">Only the workspace owner can change settings.</p>
+        <p className="mt-3 text-muted">Only the workspace owner can change settings.</p>
       ) : (
         <SettingsForm orgName={ws.orgName} counties={counties} markups={markups} />
       )}

@@ -30,9 +30,9 @@ export function ProposalActions({ proposalId, status }: { proposalId: string; st
 
   if (link) {
     return (
-      <div className="gci-copyrow">
-        <input readOnly value={link} onFocus={(e) => e.currentTarget.select()} />
-        <button type="button" className="gci-btn" onClick={() => { navigator.clipboard?.writeText(link); setCopied(true); }}>
+      <div className="flex flex-wrap items-center gap-2">
+        <input className="ui-input flex-1" readOnly value={link} onFocus={(e) => e.currentTarget.select()} />
+        <button type="button" className="ui-btn ui-btn-ghost" onClick={() => { navigator.clipboard?.writeText(link); setCopied(true); }}>
           {copied ? "Copied ✓" : "Copy new link"}
         </button>
       </div>
@@ -40,9 +40,9 @@ export function ProposalActions({ proposalId, status }: { proposalId: string; st
   }
 
   return (
-    <div className="gci-proposal-actions">
-      <button type="button" className="gci-btn" disabled={busy} onClick={() => act("resend")}>Resend</button>
-      <button type="button" className="gci-linkbtn" disabled={busy} onClick={() => act("withdraw")}>Withdraw</button>
+    <div className="flex flex-wrap items-center gap-2">
+      <button type="button" className="ui-btn ui-btn-ghost" disabled={busy} onClick={() => act("resend")}>Resend</button>
+      <button type="button" className="ui-btn ui-btn-quiet" disabled={busy} onClick={() => act("withdraw")}>Withdraw</button>
     </div>
   );
 }

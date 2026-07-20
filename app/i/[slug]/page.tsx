@@ -16,12 +16,14 @@ export default async function IntakeLinkPage({
   if (!link) notFound();
 
   return (
-    <main className="gci-page">
-      <header className="gci-chrome">
-        <span className="gci-gc-name">{link.display_name ?? "Request an estimate"}</span>
-        <span className="gci-powered">Powered by GC_intersection</span>
-      </header>
-      <IntakeForm slug={link.slug} variant="link" />
+    <main className="min-h-dvh bg-bg text-ink">
+      <div className="mx-auto max-w-2xl px-4 py-8 sm:py-12">
+        <header className="mb-6 flex items-center justify-between gap-3">
+          <span className="font-display text-lg font-bold text-ink">{link.display_name ?? "Request an estimate"}</span>
+          <span className="text-xs text-faint">Powered by GC_intersection</span>
+        </header>
+        <IntakeForm slug={link.slug} variant="link" />
+      </div>
     </main>
   );
 }

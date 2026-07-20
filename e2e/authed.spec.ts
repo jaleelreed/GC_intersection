@@ -54,7 +54,7 @@ test("GC signs in, edits a lead's estimate, sends a bid, buyer accepts", async (
   // Back on the reveal; send the bid.
   await expect(page).toHaveURL(new RegExp(`/app/lead/${id}$`), { timeout: 15_000 });
   await page.getByRole("button", { name: "Create bid link" }).click();
-  const linkInput = page.locator('.gci-sendbox input[readonly]');
+  const linkInput = page.getByTestId('bid-link');
   await expect(linkInput).toBeVisible({ timeout: 15_000 });
   const buyerUrl = await linkInput.inputValue();
   expect(buyerUrl).toContain("/p/");

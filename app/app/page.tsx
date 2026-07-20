@@ -41,21 +41,25 @@ export default async function AppHome({
   const total = Object.values(counts).reduce((a, b) => a + b, 0);
 
   return (
-    <main className="gci-page">
-      <h1>Leads</h1>
+    <main className="ui-rise mx-auto max-w-3xl px-4 py-8">
+      <h1 className="font-display text-3xl font-bold">Leads</h1>
 
       {total === 0 ? (
         <>
-          <div className="gci-empty">
-            <p className="gci-empty-lead">No leads yet.</p>
-            <p className="gci-hint">
+          <div className="ui-card mt-6 p-6">
+            <p className="font-display text-xl font-bold">No leads yet.</p>
+            <p className="mt-2 text-muted">
               Share your link below. Every submission lands here already priced — a range
               from county market data with the swing drivers named. Your edits teach it your
               real pricing, so the next draft starts closer.
             </p>
           </div>
-          {link && <ShareLink slug={link.slug} />}
-          <ol className="gci-steps">
+          {link && (
+            <div className="mt-6">
+              <ShareLink slug={link.slug} />
+            </div>
+          )}
+          <ol className="mt-6 space-y-2 pl-5 text-muted marker:font-semibold marker:text-accent [list-style:decimal]">
             <li>Share your link (text it, or show the QR).</li>
             <li>A homeowner fills the 3-minute form.</li>
             <li>A priced draft appears here — you edit and send.</li>
@@ -63,46 +67,57 @@ export default async function AppHome({
         </>
       ) : (
         <>
-          <nav className="gci-pipeline" aria-label="Pipeline">
-            <Link href="/app" className={`gci-pill ${!active ? "sel" : ""}`}>
+          <nav className="mt-6 flex flex-wrap gap-2" aria-label="Pipeline">
+            <Link
+              href="/app"
+              className={`ui-btn rounded-full px-4 text-sm ${
+                !active ? "bg-ink text-[color:var(--bg)]" : "border-line bg-surface text-muted hover:text-ink"
+              }`}
+            >
               All {total}
             </Link>
             {LEAD_STAGES.map((s) => (
               <Link
                 key={s}
                 href={`/app?stage=${s}`}
-                className={`gci-pill gci-stage-${s} ${active === s ? "sel" : ""}`}
+                className={`ui-btn rounded-full px-4 text-sm ${
+                  active === s ? "bg-accent text-accent-foreground" : "border-line bg-surface text-muted hover:text-ink"
+                }`}
               >
                 {STAGE_LABEL[s]} {counts[s]}
               </Link>
             ))}
           </nav>
 
-          <ul className="gci-leads">
+          <ul className="ui-card mt-6 divide-y divide-line overflow-hidden">
             {leads.map((l) => (
               <li key={l.id}>
-                <Link href={`/app/lead/${l.id}`}>
-                  <div className="gci-lead-row">
-                    <strong>
+                <Link href={`/app/lead/${l.id}`} className="block px-5 py-4 transition-colors hover:bg-accent-soft">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <strong className="font-semibold text-ink">
                       {l.address_line1}, {l.city}
                     </strong>
-                    <span className="gci-lead-total">
+                    <span className="tabular-nums font-semibold text-ink">
                       {l.range_low != null
                         ? `${money(l.range_low)}–${money(l.range_high)}`
                         : money(l.grand_total)}
                     </span>
                   </div>
-                  <span className="gci-hint">
+                  <span className="mt-1 block text-sm text-muted">
                     {STAGE_LABEL[l.pipeline_stage]} · via {l.channel}
                     {l.contact_name ? ` · ${l.contact_name}` : ""}
                   </span>
                 </Link>
               </li>
             ))}
-            {leads.length === 0 && <li className="gci-hint">No leads in this stage.</li>}
+            {leads.length === 0 && <li className="px-5 py-4 text-sm text-muted">No leads in this stage.</li>}
           </ul>
 
-          {link && <ShareLink slug={link.slug} compact />}
+          {link && (
+            <div className="mt-6">
+              <ShareLink slug={link.slug} compact />
+            </div>
+          )}
         </>
       )}
     </main>

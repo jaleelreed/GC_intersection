@@ -16,23 +16,27 @@ export default async function LinksPage() {
   const anyLeads = stats.some((s) => s.leads > 0);
 
   return (
-    <main className="gci-page">
-      <p className="gci-back"><a href="/app">← Leads</a></p>
-      <h1>Your links</h1>
+    <main className="ui-rise mx-auto max-w-3xl px-5 py-8">
+      <p className="mb-3"><a href="/app" className="text-sm font-semibold text-muted hover:text-ink">← Leads</a></p>
+      <h1 className="font-display text-3xl font-bold">Your links</h1>
 
       {anyLeads && (
-        <section className="gci-share-compact gci-share">
-          <h2>Which door works</h2>
-          <table className="gci-bidlines">
+        <section className="ui-card mt-6 p-5">
+          <h2 className="font-display text-lg font-semibold">Which door works</h2>
+          <table className="mt-3 w-full text-sm">
             <thead>
-              <tr><th>Channel</th><th className="num">Leads</th><th className="num">Won</th></tr>
+              <tr className="border-b border-line text-left text-muted">
+                <th className="py-2 font-semibold">Channel</th>
+                <th className="py-2 text-right font-semibold">Leads</th>
+                <th className="py-2 text-right font-semibold">Won</th>
+              </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-line">
               {stats.map((s) => (
                 <tr key={s.channel}>
-                  <td>{CHANNEL_LABEL[s.channel]}</td>
-                  <td className="num">{s.leads}</td>
-                  <td className="num">{s.won}</td>
+                  <td className="py-2">{CHANNEL_LABEL[s.channel]}</td>
+                  <td className="py-2 text-right tabular-nums">{s.leads}</td>
+                  <td className="py-2 text-right tabular-nums">{s.won}</td>
                 </tr>
               ))}
             </tbody>

@@ -39,17 +39,17 @@ export function SettingsForm({
   }
 
   return (
-    <div>
-      {saved && <p className="gci-saved">{saved}</p>}
+    <div className="mt-6 space-y-6">
+      {saved && <p className="font-semibold text-positive">{saved}</p>}
 
-      <section className="gci-share">
-        <h2>Business name</h2>
-        <p className="gci-hint">Shown on your intake form and every bid.</p>
-        <div className="gci-copyrow">
-          <input value={name} onChange={(e) => setName(e.target.value)} aria-label="Business name" />
+      <section className="ui-card p-6">
+        <h2 className="font-display text-lg font-bold text-ink">Business name</h2>
+        <p className="mt-1 text-sm text-muted">Shown on your intake form and every bid.</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <input className="ui-input flex-1" value={name} onChange={(e) => setName(e.target.value)} aria-label="Business name" />
           <button
             type="button"
-            className="gci-primary"
+            className="ui-btn ui-btn-primary"
             onClick={async () => {
               if (await post({ action: "business_name", name })) flash("Saved");
             }}
@@ -59,48 +59,53 @@ export function SettingsForm({
         </div>
       </section>
 
-      <section className="gci-share">
-        <h2>Service area</h2>
-        <p className="gci-hint">Counties you cover. Submissions outside are accepted but flagged.</p>
-        {counties.map((c) => (
-          <label key={c.fips} className="gci-check">
-            <input
-              type="checkbox"
-              defaultChecked={c.active}
-              onChange={async (e) => {
-                await post({ action: "service_area", fips: c.fips, add: e.target.checked });
-                flash("Saved");
-              }}
-            />
-            {c.name}, {c.state_code}
-          </label>
-        ))}
+      <section className="ui-card p-6">
+        <h2 className="font-display text-lg font-bold text-ink">Service area</h2>
+        <p className="mt-1 text-sm text-muted">Counties you cover. Submissions outside are accepted but flagged.</p>
+        <div className="mt-4 space-y-2">
+          {counties.map((c) => (
+            <label key={c.fips} className="flex items-center gap-2 text-ink">
+              <input
+                type="checkbox"
+                defaultChecked={c.active}
+                onChange={async (e) => {
+                  await post({ action: "service_area", fips: c.fips, add: e.target.checked });
+                  flash("Saved");
+                }}
+              />
+              {c.name}, {c.state_code}
+            </label>
+          ))}
+        </div>
       </section>
 
-      <section className="gci-share">
-        <h2>Default markups</h2>
-        <p className="gci-hint">Applied to every new draft, in order.</p>
-        {markups.map((m) => (
-          <div key={m.id} className="gci-markup-row">
-            <span>{m.name}</span>
-            <input
-              inputMode="decimal"
-              value={rates[m.id] ?? ""}
-              onChange={(e) => setRates((r) => ({ ...r, [m.id]: e.target.value.replace(/[^0-9.]/g, "") }))}
-              aria-label={`${m.name} percent`}
-            />
-            <span>%</span>
-            <button
-              type="button"
-              className="gci-btn"
-              onClick={async () => {
-                if (await post({ action: "markup", id: m.id, rate_pct: rates[m.id] || "0" })) flash("Saved");
-              }}
-            >
-              Save
-            </button>
-          </div>
-        ))}
+      <section className="ui-card p-6">
+        <h2 className="font-display text-lg font-bold text-ink">Default markups</h2>
+        <p className="mt-1 text-sm text-muted">Applied to every new draft, in order.</p>
+        <div className="mt-4 space-y-3">
+          {markups.map((m) => (
+            <div key={m.id} className="flex flex-wrap items-center gap-2">
+              <span className="min-w-0 flex-1 text-ink">{m.name}</span>
+              <input
+                className="ui-input w-24 text-right tabular-nums"
+                inputMode="decimal"
+                value={rates[m.id] ?? ""}
+                onChange={(e) => setRates((r) => ({ ...r, [m.id]: e.target.value.replace(/[^0-9.]/g, "") }))}
+                aria-label={`${m.name} percent`}
+              />
+              <span className="text-muted">%</span>
+              <button
+                type="button"
+                className="ui-btn ui-btn-ghost"
+                onClick={async () => {
+                  if (await post({ action: "markup", id: m.id, rate_pct: rates[m.id] || "0" })) flash("Saved");
+                }}
+              >
+                Save
+              </button>
+            </div>
+          ))}
+        </div>
       </section>
     </div>
   );

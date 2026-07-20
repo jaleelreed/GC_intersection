@@ -61,15 +61,26 @@ export function PhotoUpload({ photos, setPhotos }: { photos: Photo[]; setPhotos:
 
   return (
     <div data-field="photos">
-      <p className="gci-hint">Add photos (optional) — up to {MAX_PHOTOS}. Helps the contractor bid accurately.</p>
-      <input type="file" accept="image/*" multiple onChange={onPick} disabled={busy || photos.length >= MAX_PHOTOS} />
-      {busy && <span className="gci-hint"> compressing…</span>}
-      <div className="gci-photo-grid">
+      <p className="text-sm text-muted">Add photos (optional) — up to {MAX_PHOTOS}. Helps the contractor bid accurately.</p>
+      <input
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={onPick}
+        disabled={busy || photos.length >= MAX_PHOTOS}
+        className="mt-3 block w-full text-sm text-muted file:mr-3 file:cursor-pointer file:rounded-lg file:border file:border-line file:bg-surface file:px-3 file:py-2 file:text-sm file:font-semibold file:text-ink hover:file:border-faint disabled:cursor-not-allowed disabled:opacity-50"
+      />
+      {busy && <span className="text-sm text-muted"> compressing…</span>}
+      <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
         {photos.map((p, i) => (
-          <div key={i} className="gci-photo-thumb">
+          <div key={i} className="relative overflow-hidden rounded-xl border border-line">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={p.preview} alt={`photo ${i + 1}`} />
-            <button type="button" onClick={() => setPhotos(photos.filter((_, j) => j !== i))}>×</button>
+            <img src={p.preview} alt={`photo ${i + 1}`} className="aspect-square w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => setPhotos(photos.filter((_, j) => j !== i))}
+              className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full border border-danger bg-surface text-sm leading-none text-danger transition-colors hover:bg-danger hover:text-accent-foreground"
+            >×</button>
           </div>
         ))}
       </div>

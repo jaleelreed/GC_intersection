@@ -18,81 +18,83 @@ export default async function BuyerProposalPage({ params }: { params: Promise<{ 
   const lines = await bidLinesForToken(token);
 
   return (
-    <main className="gci-page gci-bid">
-      <header className="gci-chrome">
-        <span className="gci-gc-name">{view.orgName}</span>
-        <PrintButton />
-      </header>
+    <main className="mx-auto max-w-3xl bg-bg px-5 py-8 text-ink">
+      <div className="ui-card ui-rise p-6 sm:p-9">
+        <header className="flex items-baseline justify-between gap-3 border-b border-line pb-4">
+          <span className="font-display text-xl font-bold">{view.orgName}</span>
+          <PrintButton />
+        </header>
 
-      <h1>Estimate for {view.projectName}</h1>
-      {view.recipientName && <p className="gci-hint">Prepared for {view.recipientName}</p>}
-      {view.expiresAt && (
-        <p className="gci-hint">Valid until {new Date(view.expiresAt).toLocaleDateString()}</p>
-      )}
+        <h1 className="mt-6 text-3xl font-bold">Estimate for {view.projectName}</h1>
+        {view.recipientName && <p className="mt-1 text-sm text-muted">Prepared for {view.recipientName}</p>}
+        {view.expiresAt && (
+          <p className="text-sm text-muted">Valid until {new Date(view.expiresAt).toLocaleDateString()}</p>
+        )}
 
-      {view.coverNote && <p className="gci-covernote">{view.coverNote}</p>}
+        {view.coverNote && <p className="mt-4 leading-relaxed text-muted">{view.coverNote}</p>}
 
-      {lines.filter((l) => !l.is_alternate).length > 0 && (
-        <table className="gci-bidlines">
-          <tbody>
-            {lines.filter((l) => !l.is_alternate).map((l, i) => (
-              <tr key={i}>
-                <td>{l.description}{l.is_allowance && <span className="gci-hint"> (allowance)</span>}</td>
-                <td className="num">{money(l.total)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-
-      <p className="gci-range">{money(view.grandTotal)}</p>
-
-      {lines.some((l) => l.is_alternate) && (
-        <section className="gci-alternates">
-          <h2>Optional add-ons</h2>
-          <p className="gci-hint">Not included in the total above — available if you want them.</p>
-          <table className="gci-bidlines">
+        {lines.filter((l) => !l.is_alternate).length > 0 && (
+          <table className="mt-6 w-full border-collapse text-sm">
             <tbody>
-              {lines.filter((l) => l.is_alternate).map((l, i) => (
-                <tr key={i}>
-                  <td>{l.description}</td>
-                  <td className="num">+{money(l.total)}</td>
+              {lines.filter((l) => !l.is_alternate).map((l, i) => (
+                <tr key={i} className="border-b border-line">
+                  <td className="py-3 pr-4">{l.description}{l.is_allowance && <span className="text-muted"> (allowance)</span>}</td>
+                  <td className="py-3 text-right tabular-nums">{money(l.total)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </section>
-      )}
-      {view.rangeLow != null && view.rangeHigh != null && (
-        <p className="gci-hint">Estimated range {money(view.rangeLow)} – {money(view.rangeHigh)}</p>
-      )}
+        )}
 
-      {(view.inclusions || view.exclusions || view.terms) && (
-        <div className="gci-bid-terms">
-          {view.inclusions && (
-            <div><h2>Included</h2><p>{view.inclusions}</p></div>
-          )}
-          {view.exclusions && (
-            <div><h2>Not included</h2><p>{view.exclusions}</p></div>
-          )}
-          {view.terms && (
-            <div><h2>Terms</h2><p>{view.terms}</p></div>
-          )}
+        <p className="mt-6 text-right font-display text-3xl font-bold tabular-nums">{money(view.grandTotal)}</p>
+
+        {lines.some((l) => l.is_alternate) && (
+          <section className="mt-8">
+            <h2 className="text-lg font-bold">Optional add-ons</h2>
+            <p className="text-sm text-muted">Not included in the total above — available if you want them.</p>
+            <table className="mt-3 w-full border-collapse text-sm">
+              <tbody>
+                {lines.filter((l) => l.is_alternate).map((l, i) => (
+                  <tr key={i} className="border-b border-line">
+                    <td className="py-3 pr-4">{l.description}</td>
+                    <td className="py-3 text-right tabular-nums">+{money(l.total)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        )}
+        {view.rangeLow != null && view.rangeHigh != null && (
+          <p className="mt-3 text-sm text-muted">Estimated range {money(view.rangeLow)} – {money(view.rangeHigh)}</p>
+        )}
+
+        {(view.inclusions || view.exclusions || view.terms) && (
+          <div className="mt-8 grid gap-5">
+            {view.inclusions && (
+              <div><h2 className="text-lg font-bold">Included</h2><p className="mt-1 leading-relaxed text-muted">{view.inclusions}</p></div>
+            )}
+            {view.exclusions && (
+              <div><h2 className="text-lg font-bold">Not included</h2><p className="mt-1 leading-relaxed text-muted">{view.exclusions}</p></div>
+            )}
+            {view.terms && (
+              <div><h2 className="text-lg font-bold">Terms</h2><p className="mt-1 leading-relaxed text-muted">{view.terms}</p></div>
+            )}
+          </div>
+        )}
+
+        <div className="mt-8 border-t border-line pt-6 print:hidden">
+          <AcceptBid token={token} initialStatus={view.status} />
         </div>
-      )}
 
-      <div className="gci-accept-area">
-        <AcceptBid token={token} initialStatus={view.status} />
+        <p className="mt-6 text-xs leading-relaxed text-faint">
+          This is an estimate, not a binding contract. Final scope and price are set in a
+          separate written agreement between you and the contractor. No payment is collected here.
+        </p>
+
+        <footer className="mt-6 border-t border-line pt-4 text-xs text-faint">
+          Prepared with GC_intersection · gc-intersection.vercel.app
+        </footer>
       </div>
-
-      <p className="gci-hint gci-disclaimer">
-        This is an estimate, not a binding contract. Final scope and price are set in a
-        separate written agreement between you and the contractor. No payment is collected here.
-      </p>
-
-      <footer className="gci-fingerprint">
-        Prepared with GC_intersection · gc-intersection.vercel.app
-      </footer>
     </main>
   );
 }

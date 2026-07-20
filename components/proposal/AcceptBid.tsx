@@ -14,10 +14,10 @@ export function AcceptBid({ token, initialStatus }: { token: string; initialStat
   const [error, setError] = useState<string | null>(null);
 
   if (status === "accepted") {
-    return <p className="gci-accepted">✓ You accepted this bid. The contractor has been notified.</p>;
+    return <p className="text-positive font-bold">✓ You accepted this bid. The contractor has been notified.</p>;
   }
   if (status === "declined") {
-    return <p className="gci-declined">This bid was declined. The contractor has been notified.</p>;
+    return <p className="text-danger font-bold">This bid was declined. The contractor has been notified.</p>;
   }
 
   async function call(path: string, extra: Record<string, unknown>, nextStatus: string) {
@@ -42,13 +42,13 @@ export function AcceptBid({ token, initialStatus }: { token: string; initialStat
   return (
     <div>
       {error && (
-        <div className="gci-errors" role="alert"><p>{error}</p></div>
+        <div className="mb-4 rounded-lg border border-danger bg-surface p-3 text-danger" role="alert"><p>{error}</p></div>
       )}
 
       {mode === "confirm-accept" ? (
-        <div className="gci-nav">
-          <button type="button" onClick={() => setMode("idle")}>Cancel</button>
-          <button type="button" className="gci-primary" disabled={busy} onClick={() => call("/api/proposal/accept", {}, "accepted")}>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setMode("idle")}>Cancel</button>
+          <button type="button" className="ui-btn ui-btn-primary" disabled={busy} onClick={() => call("/api/proposal/accept", {}, "accepted")}>
             {busy ? "…" : "Yes, accept this bid"}
           </button>
         </div>
@@ -60,18 +60,18 @@ export function AcceptBid({ token, initialStatus }: { token: string; initialStat
             onChange={(e) => setReason(e.target.value)}
             placeholder="Optional: let them know why"
             aria-label="Decline reason"
-            className="gci-wideinput"
+            className="ui-input"
           />
-          <div className="gci-nav">
-            <button type="button" onClick={() => setMode("idle")}>Cancel</button>
-            <button type="button" className="gci-declinebtn" disabled={busy} onClick={() => call("/api/proposal/decline", { reason }, "declined")}>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setMode("idle")}>Cancel</button>
+            <button type="button" className="ui-btn border-danger text-danger" disabled={busy} onClick={() => call("/api/proposal/decline", { reason }, "declined")}>
               {busy ? "…" : "Decline this bid"}
             </button>
           </div>
         </div>
       ) : mode === "question" ? (
         questionSent ? (
-          <p className="gci-hint">Sent — the contractor will get back to you.</p>
+          <p className="text-sm text-muted">Sent — the contractor will get back to you.</p>
         ) : (
           <div>
             <textarea
@@ -80,13 +80,13 @@ export function AcceptBid({ token, initialStatus }: { token: string; initialStat
               onChange={(e) => setQuestion(e.target.value)}
               placeholder="Ask the contractor a question about this estimate"
               aria-label="Your question"
-              className="gci-wideinput"
+              className="ui-input"
             />
-            <div className="gci-nav">
-              <button type="button" onClick={() => setMode("idle")}>Cancel</button>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setMode("idle")}>Cancel</button>
               <button
                 type="button"
-                className="gci-primary"
+                className="ui-btn ui-btn-primary"
                 disabled={busy || !question.trim()}
                 onClick={async () => {
                   setBusy(true);
@@ -112,19 +112,19 @@ export function AcceptBid({ token, initialStatus }: { token: string; initialStat
           </div>
         )
       ) : (
-        <div className="gci-buyer-actions">
-          <button type="button" className="gci-primary" onClick={() => setMode("confirm-accept")}>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" className="ui-btn ui-btn-primary" onClick={() => setMode("confirm-accept")}>
             Accept this bid
           </button>
-          <button type="button" className="gci-linkbtn" onClick={() => setMode("question")}>
+          <button type="button" className="ui-btn ui-btn-quiet" onClick={() => setMode("question")}>
             Ask a question
           </button>
-          <button type="button" className="gci-linkbtn" onClick={() => setMode("decline")}>
+          <button type="button" className="ui-btn ui-btn-quiet" onClick={() => setMode("decline")}>
             Decline
           </button>
         </div>
       )}
-      <p className="gci-hint">Accepting records your agreement to the scope and price. No payment is collected here.</p>
+      <p className="mt-4 text-sm text-muted">Accepting records your agreement to the scope and price. No payment is collected here.</p>
     </div>
   );
 }

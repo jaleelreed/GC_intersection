@@ -32,28 +32,28 @@ function LinkCard({ link, origin }: { link: LinkRow; origin: string }) {
   }
 
   return (
-    <div className="gci-linkcard">
-      <div className="gci-linkcard-head">
-        <strong>{link.label || "Link"}</strong>
-        <span className="gci-pill gci-stage-new">{CHANNEL_LABEL[link.channel]}</span>
-        <span className="gci-hint">{link.lead_count} leads</span>
+    <div className="ui-card mt-4 p-5">
+      <div className="flex flex-wrap items-center gap-3">
+        <strong className="font-display text-base">{link.label || "Link"}</strong>
+        <span className="ui-chip">{CHANNEL_LABEL[link.channel]}</span>
+        <span className="text-sm text-faint">{link.lead_count} leads</span>
       </div>
-      <div className="gci-copyrow">
-        <input readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
-        <button type="button" className="gci-primary" onClick={() => copy(url, "url")}>
+      <div className="mt-3 flex gap-2">
+        <input className="ui-input" readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
+        <button type="button" className="ui-btn ui-btn-primary shrink-0" onClick={() => copy(url, "url")}>
           {copied === "url" ? "Copied ✓" : "Copy"}
         </button>
       </div>
       {link.channel === "embed" && (
-        <div className="gci-copyrow" style={{ marginTop: 8 }}>
-          <input readOnly value={embedSnippet} onFocus={(e) => e.currentTarget.select()} />
-          <button type="button" className="gci-btn" onClick={() => copy(embedSnippet, "embed")}>
+        <div className="mt-2 flex gap-2">
+          <input className="ui-input" readOnly value={embedSnippet} onFocus={(e) => e.currentTarget.select()} />
+          <button type="button" className="ui-btn ui-btn-ghost shrink-0" onClick={() => copy(embedSnippet, "embed")}>
             {copied === "embed" ? "Copied ✓" : "Copy snippet"}
           </button>
         </div>
       )}
       {link.channel === "qr" && qr && (
-        <div className="gci-qr">
+        <div className="mt-3">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={qr} alt={`QR for ${link.label}`} width={140} height={140} />
         </div>
@@ -91,14 +91,14 @@ export function LinkManager({ links }: { links: LinkRow[] }) {
 
   return (
     <div>
-      <form className="gci-share" onSubmit={create}>
-        <h2>New link</h2>
-        <div className="gci-newlink">
-          <input placeholder="Label (e.g. Spring yard signs)" value={label} onChange={(e) => setLabel(e.target.value)} />
-          <select value={channel} onChange={(e) => setChannel(e.target.value as Channel)} aria-label="channel">
+      <form className="ui-card mt-6 p-5" onSubmit={create}>
+        <h2 className="font-display text-lg font-semibold">New link</h2>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <input className="ui-input" placeholder="Label (e.g. Spring yard signs)" value={label} onChange={(e) => setLabel(e.target.value)} />
+          <select className="ui-input sm:w-auto" value={channel} onChange={(e) => setChannel(e.target.value as Channel)} aria-label="channel">
             {CHANNELS.map((c) => <option key={c} value={c}>{CHANNEL_LABEL[c]}</option>)}
           </select>
-          <button type="submit" className="gci-primary" disabled={busy}>{busy ? "…" : "Create"}</button>
+          <button type="submit" className="ui-btn ui-btn-primary shrink-0" disabled={busy}>{busy ? "…" : "Create"}</button>
         </div>
       </form>
 
