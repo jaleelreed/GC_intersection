@@ -123,3 +123,29 @@ test("a brand-new email is provisioned on first /app visit (cost_items clone und
   await expect(page.getByRole("button", { name: "Toggle navigation" })).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText("Welcome to BidEasy")).toBeVisible();
 });
+
+test("mobile: hamburger opens the nav drawer; selecting an item closes it", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 375, height: 812 } });
+  const page = await context.newPage();
+  await context.addCookies([
+    { name: "e2e_auth", value: SECRET!, domain: "localhost", path: "/" },
+    { name: "e2e_email", value: FIXTURE_GC_EMAIL, domain: "localhost", path: "/" },
+  ]);
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem("bideasy_onboarding", "seen");
+    } catch {
+      /* ignore */
+    }
+  });
+  await page.goto("/app");
+
+  const drawer = page.locator("#primary-drawer");
+  await expect(drawer).toHaveAttribute("aria-hidden", "true"); // closed on load
+  await page.getByRole("button", { name: "Toggle navigation" }).click();
+  await expect(drawer).toHaveAttribute("aria-hidden", "false"); // opens
+  await page.getByRole("link", { name: "Bids" }).click(); // selecting an item…
+  await expect(page).toHaveURL(/\/app\/bids$/); // …navigates…
+  await expect(drawer).toHaveAttribute("aria-hidden", "true"); // …and closes it
+  await context.close();
+});
