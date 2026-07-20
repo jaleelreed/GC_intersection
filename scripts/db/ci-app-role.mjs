@@ -16,10 +16,16 @@ const sql = `
   CREATE ROLE app_owner LOGIN PASSWORD 'app_pw'
     NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE INHERIT;
   GRANT USAGE, CREATE ON SCHEMA public TO app_owner;
-  -- Transfer ownership of every migration-created object to the app role, so
-  -- it is the table owner exactly like the prod role.
-  REASSIGN OWNED BY gc TO app_owner;
-  GRANT ALL ON ALL TABLES IN SCHEMA public TO app_owner;
+  -- Make the app role the OWNER of the migration-created tables (only public
+  -- schema objects — not system-owned objects), so RLS behaves as in prod:
+  -- owner bypasses non-FORCE policies, and is subject to FORCE'd ones.
+  DO $$
+  DECLARE r record;
+  BEGIN
+    FOR r IN SELECT tablename FROM pg_tables WHERE schemaname = 'public' LOOP
+      EXECUTE format('ALTER TABLE public.%I OWNER TO app_owner', r.tablename);
+    END LOOP;
+  END $$;
   GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO app_owner;
 `;
 
