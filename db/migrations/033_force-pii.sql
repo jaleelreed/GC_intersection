@@ -1,9 +1,8 @@
 -- ============================================================================
--- 033 FORCE RLS on the homeowner-PII tables — intake_submissions (contact
--- name / email / phone, property address, project details) and intake_photos.
--- Same guarantee we gave the pricing tables (031/032), now for the customer
--- data: a non-superuser owner role cannot read/write another org's leads or
--- photos even if an app-level `WHERE org_id` is ever forgotten.
+-- 033 FORCE RLS on intake_submissions — the homeowner-PII lead record (contact
+-- name / email / phone, property address, project details). Same guarantee we
+-- gave the pricing tables (031/032), now for the customer data. (intake_photos
+-- is created later, in 060, and is FORCE'd in 061.)
 --
 -- Access paths, all now org-scoped:
 --   * GC reads/writes (leads, links, audit funnel, reveal head, photos):
@@ -16,17 +15,11 @@
 -- is discovered FROM it, so it cannot be org-gated).
 -- ============================================================================
 DO $$
-DECLARE t text;
 BEGIN
-  FOREACH t IN ARRAY ARRAY['intake_submissions', 'intake_photos']
-  LOOP
-    EXECUTE format('DROP POLICY IF EXISTS tenant_isolation_%I ON %I', t, t);
-    EXECUTE format(
-      'CREATE POLICY tenant_isolation_%I ON %I
-         USING (org_id = current_setting(''app.org_id'', true)::uuid)
-         WITH CHECK (org_id = current_setting(''app.org_id'', true)::uuid)',
-      t, t);
-    EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', t);
-    EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', t);
-  END LOOP;
+  EXECUTE 'DROP POLICY IF EXISTS tenant_isolation_intake_submissions ON intake_submissions';
+  EXECUTE 'CREATE POLICY tenant_isolation_intake_submissions ON intake_submissions
+             USING (org_id = current_setting(''app.org_id'', true)::uuid)
+             WITH CHECK (org_id = current_setting(''app.org_id'', true)::uuid)';
+  EXECUTE 'ALTER TABLE intake_submissions ENABLE ROW LEVEL SECURITY';
+  EXECUTE 'ALTER TABLE intake_submissions FORCE ROW LEVEL SECURITY';
 END $$;
