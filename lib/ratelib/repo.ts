@@ -2,7 +2,7 @@
 // These are the LEARNED rates the generator actually uses (harvested from the
 // GC's own edits; they beat the market seed). Editing one changes future
 // drafts; deleting reverts that cost code to the market seed. Org-scoped.
-import { getPool } from "../db";
+import { orgQuery } from "../db";
 
 export interface Rate {
   id: string;
@@ -14,7 +14,8 @@ export interface Rate {
 }
 
 export async function listRates(orgId: string): Promise<Rate[]> {
-  const r = await getPool().query(
+  const r = await orgQuery<Rate>(
+    orgId,
     `SELECT ci.id, ci.name, c.code AS cost_code, ci.uom, ci.sub_unit_cost AS unit_cost, ci.updated_at
      FROM cost_items ci
      LEFT JOIN cost_codes c ON c.id = ci.cost_code_id
@@ -26,7 +27,8 @@ export async function listRates(orgId: string): Promise<Rate[]> {
 }
 
 export async function updateRate(orgId: string, id: string, unitCost: string): Promise<boolean> {
-  const r = await getPool().query(
+  const r = await orgQuery(
+    orgId,
     `UPDATE cost_items SET sub_unit_cost = $3
      WHERE id = $2 AND org_id = $1 AND source = 'harvested_bid' AND deleted_at IS NULL`,
     [orgId, id, unitCost]
@@ -36,7 +38,8 @@ export async function updateRate(orgId: string, id: string, unitCost: string): P
 
 /** Soft-delete a learned rate → that cost code reverts to the market seed. */
 export async function deleteRate(orgId: string, id: string): Promise<boolean> {
-  const r = await getPool().query(
+  const r = await orgQuery(
+    orgId,
     `UPDATE cost_items SET deleted_at = now()
      WHERE id = $2 AND org_id = $1 AND source = 'harvested_bid' AND deleted_at IS NULL`,
     [orgId, id]

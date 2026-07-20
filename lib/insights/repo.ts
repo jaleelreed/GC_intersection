@@ -1,7 +1,7 @@
 // Gap 5: convergence insights — make the moat visible. Edit coverage across
 // estimates (the D10 trust-floor signal) and a transparent view of what the
 // platform has learned from this GC's own edits.
-import { getPool } from "../db";
+import { getPool, orgQuery } from "../db";
 import { editMetrics } from "../estimate/edit";
 
 export interface ConvergenceSummary {
@@ -45,7 +45,8 @@ export async function convergenceSummary(orgId: string): Promise<ConvergenceSumm
 
   const learnedRateCount = Number(
     (
-      await pool.query(
+      await orgQuery(
+        orgId,
         `SELECT count(*)::int AS n FROM cost_items
          WHERE org_id = $1 AND source = 'harvested_bid' AND deleted_at IS NULL`,
         [orgId]
@@ -70,7 +71,8 @@ export interface LearnedRate {
 }
 
 export async function learnedRates(orgId: string, limit = 100): Promise<LearnedRate[]> {
-  const r = await getPool().query(
+  const r = await orgQuery<LearnedRate>(
+    orgId,
     `SELECT ci.name, c.code AS cost_code, ci.uom, ci.sub_unit_cost AS unit_cost, ci.created_at AS learned_at
      FROM cost_items ci
      LEFT JOIN cost_codes c ON c.id = ci.cost_code_id
