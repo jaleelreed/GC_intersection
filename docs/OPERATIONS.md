@@ -27,10 +27,14 @@ These are merged in code and must be applied once (idempotent, safe to re-run):
 | `031_force-cost-items` | FORCE RLS on the rate library |
 | `032_force-estimate-lines` | FORCE RLS on priced bid lines |
 | `033_force-pii` | FORCE RLS on `intake_submissions` (homeowner PII) |
+| `034_force-bid-tables` | FORCE RLS on estimates/versions/markups, projects, proposals, proposal_events |
+| `035_force-remaining` | FORCE RLS on service areas, markups, benchmarks, ai_jobs, scope hints, enrichment, audit_log |
 | `061_force-intake-photos` | FORCE RLS on `intake_photos` |
 
 Because `FORCE` binds even the owner role Neon uses, these enforce isolation on
-those tables **immediately on apply — no role swap required.**
+those tables **immediately on apply — no role swap required.** Run
+`npm run db:migrate` once after the deploy; it applies all pending migrations in
+order and is idempotent.
 
 ## Environment variables (Vercel → Settings → Environment Variables, Production)
 
@@ -49,19 +53,23 @@ is also code-guarded (inert when `VERCEL_ENV==="production"`), but do not set it
 
 ## Tenant isolation (RLS) — current state
 
-DB-enforced (`FORCE` RLS, verified in CI under a non-superuser role):
-`cost_items`, `estimate_lines`, `intake_submissions`, `intake_photos`,
-`lead_notes`, `notifications`.
+**Every table carrying `org_id` is now `FORCE`-RLS'd**, verified in CI by running
+the full GC + buyer journey (and fresh-user provisioning) under a non-superuser
+owner role: cost/estimate/proposal data, homeowner PII, config, benchmarks,
+logs — all of it. A missing org context is caught by CI, not leaked in prod.
 
-Still application-scoped (tested `WHERE org_id = $1`, owner-bypass): the bid
-*summary* tables (`estimates`, `estimate_versions`, `proposals`), config, and
-logs. Extending `FORCE` to these is the same staged, CI-proven pattern; token
-tables (`proposal_access_tokens`, `intake_links`) stay app-scoped by design (an
-unguessable token/slug is the authorization).
+Intentionally app-scoped (not FORCE'd, by design):
+- **identity / bootstrap** — `users`, `organizations`, `org_memberships` (read to
+  establish the session before an org is known);
+- **token / slug lookups** — `proposal_access_tokens`, `intake_links` (the
+  unguessable token/slug IS the authorization; the app resolves the org from it,
+  then scopes);
+- **shared platform config** with nullable `org_id` — `cost_codes`, `assemblies`,
+  `scope_assembly_map`, `assembly_modifiers`, `market_cost_items`, `counties`.
 
-For maximum enforcement in prod, run the app as a **non-superuser owner role**
-(Neon's default `*_owner` role already is one) — CI proves the full journey
-works under exactly that.
+For enforcement in prod, run the app as a **non-superuser owner role** (Neon's
+default `*_owner` role already is one) — CI proves the full journey works under
+exactly that. `FORCE` binds the owner, so no separate role swap is needed.
 
 ## Backups / disaster recovery
 
