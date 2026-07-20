@@ -9,7 +9,7 @@ export function SignOutButton() {
   return (
     <button
       type="button"
-      className="gci-navlink gci-signout"
+      className="ui-btn ui-btn-quiet text-sm"
       disabled={busy}
       onClick={async () => {
         setBusy(true);

@@ -1,25 +1,144 @@
-/* Contractor-grade tokens (docs/design/EP-01-02-design.md): 16px+ type,
-   44px+ targets, one accent, high contrast. */
+@import "tailwindcss";
+
+/* Dark mode via a .dark class on <html> (system-aware default set by a script
+   in the layout, plus a manual toggle). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Design system — warm & human, near-black ink + one bold warm accent (ember).
+   Tokens are CSS variables that swap in dark; @theme maps them to utilities so
+   `bg-surface`, `text-ink`, `text-accent`, etc. follow the active theme. */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-fg);
+  --color-accent-soft: var(--accent-soft);
+  --color-positive: var(--positive);
+  --color-danger: var(--danger);
+
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
+
+  --shadow-soft: 0 1px 2px rgba(28, 26, 23, 0.04), 0 4px 16px -6px rgba(28, 26, 23, 0.10);
+  --shadow-lift: 0 2px 4px rgba(28, 26, 23, 0.05), 0 12px 32px -10px rgba(28, 26, 23, 0.16);
+}
+
 :root {
-  --gci-accent: #b45309;
-  --gci-ink: #1e293b;
-  --gci-muted: #64748b;
-  --gci-surface: #f8fafc;
-  --gci-border: #cbd5e1;
-  --gci-error: #b91c1c;
+  --bg: #f9f7f4;         /* warm paper */
+  --surface: #ffffff;    /* cards */
+  --raised: #ffffff;
+  --ink: #1c1a17;        /* warm near-black */
+  --muted: #6c6660;      /* warm gray */
+  --faint: #736c64;      /* AA-passing secondary text on paper */
+  --line: #ece7e0;       /* warm border */
+  --accent: #bd3a1e;     /* ember — dark enough for white text + accent-on-soft to pass AA */
+  --accent-hover: #a5321a;
+  --accent-fg: #ffffff;
+  --accent-soft: #fdece6;
+  --positive: #2f8f5b;
+  --danger: #c8452b;
+}
+
+.dark {
+  --bg: #131210;
+  --surface: #1c1a16;
+  --raised: #23201b;
+  --ink: #f4efe8;
+  --muted: #b0a99f;
+  --faint: #948d84;
+  --line: #2c2822;
+  --accent: #fb6a3c;
+  --accent-hover: #ff7d52;
+  --accent-fg: #17130d;
+  --accent-soft: #2a1c15;
+  --positive: #46b078;
+  --danger: #e5654a;
+}
+
+/* Legacy tokens mapped onto the new system so un-migrated .gci-* screens
+   adopt the palette + dark mode until they're redesigned. */
+:root, .dark {
+  --gci-accent: var(--accent);
+  --gci-ink: var(--ink);
+  --gci-muted: var(--muted);
+  --gci-surface: var(--bg);
+  --gci-border: var(--line);
+  --gci-error: var(--danger);
 }
 
 * {
   box-sizing: border-box;
 }
 
+html { color-scheme: light dark; }
+
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-sans);
   font-size: 16px;
-  color: var(--gci-ink);
-  background: var(--gci-surface);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  background: var(--bg);
+  color: var(--ink);
 }
+
+/* Base typography for the new system. */
+h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+h1 { font-weight: 700; }
+h2 { font-weight: 600; }
+::selection { background: var(--accent-soft); color: var(--ink); }
+
+/* Reusable component classes (the new design language). Used by redesigned
+   screens; legacy .gci-* rules below still serve un-migrated pages. */
+.ui-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  height: 2.75rem; padding: 0 1.15rem; border-radius: 0.75rem;
+  font-weight: 600; font-size: 0.95rem; cursor: pointer;
+  border: 1px solid transparent; white-space: nowrap;
+  transition: transform 0.12s ease, background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ui-btn:active { transform: translateY(1px); }
+.ui-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ui-btn-primary { background: var(--accent); color: var(--accent-fg); box-shadow: var(--shadow-soft); }
+.ui-btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+.ui-btn-ghost { background: var(--surface); color: var(--ink); border-color: var(--line); }
+.ui-btn-ghost:hover:not(:disabled) { border-color: var(--faint); }
+.ui-btn-quiet { background: transparent; color: var(--muted); height: auto; padding: 0.35rem 0.5rem; }
+.ui-btn-quiet:hover:not(:disabled) { color: var(--ink); }
+
+.ui-card {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-xl); box-shadow: var(--shadow-soft);
+}
+
+.ui-input {
+  width: 100%; height: 2.75rem; padding: 0 0.85rem;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 0.75rem; font-size: 1rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.ui-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+textarea.ui-input { height: auto; padding: 0.65rem 0.85rem; line-height: 1.5; }
+
+.ui-label { display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.35rem; }
+.ui-chip {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600;
+  background: var(--accent-soft); color: var(--accent);
+}
+
+@keyframes ui-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.ui-rise { animation: ui-rise 0.4s cubic-bezier(0.16, 1, 0.3, 1) both; }
 
 .gci-page {
   max-width: 560px;
