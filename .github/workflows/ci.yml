@@ -44,7 +44,14 @@ jobs:
         run: npm test
       - name: build
         run: npm run build
-      - name: serve + assert 200 (US-004)
+      # Provision the prod-equivalent non-superuser owner role, then run the
+      # runtime server (and the e2e journey it serves) as that role so tenant
+      # isolation is proven under production RLS, not bypassed by a superuser.
+      - name: provision RLS-enforced app role
+        run: node scripts/db/ci-app-role.mjs
+      - name: serve + assert 200 (US-004) — as the RLS-enforced role
+        env:
+          DATABASE_URL: postgres://app_owner:app_pw@localhost:5432/gc_intersection_test
         run: |
           npm run start &
           for i in $(seq 1 30); do
@@ -53,7 +60,9 @@ jobs:
             sleep 1
           done
           echo "server never answered 200"; exit 1
-      - name: e2e (Playwright, public flows)
+      - name: e2e (Playwright, authed + public flows under RLS)
+        env:
+          DATABASE_URL: postgres://app_owner:app_pw@localhost:5432/gc_intersection_test
         run: |
           npx playwright install --with-deps chromium
           npm run test:e2e
