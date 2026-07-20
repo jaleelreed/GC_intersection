@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ThemeToggle } from "../ui/ThemeToggle";
 import { SignOutButton } from "./SignOutButton";
 import { SideNav } from "./SideNav";
@@ -38,6 +39,7 @@ export function AppShell({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true);
+  const pathname = usePathname();
 
   const enterTimer = useRef<number | undefined>(undefined);
   const leaveTimer = useRef<number | undefined>(undefined);
@@ -52,14 +54,16 @@ export function AppShell({
     return () => mq.removeEventListener("change", update);
   }, []);
 
-  // First-run: auto-open the onboarding once, then never nag.
+  // First-run: auto-open the onboarding once, on the dashboard only (never
+  // hijack a deep link into a lead/bid), then never nag.
   useEffect(() => {
+    if (pathname !== "/app") return;
     try {
       if (localStorage.getItem("bideasy_onboarding") !== "seen") setOnboardingOpen(true);
     } catch {
       /* ignore */
     }
-  }, []);
+  }, [pathname]);
 
   // Peeking is only meaningful while collapsed.
   useEffect(() => {
