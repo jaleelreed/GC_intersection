@@ -1,6 +1,6 @@
 // Gap 2: the lead pipeline. A lead is an intake submission viewed as sales
 // work — a stage, notes, follow-up. Org-scoped throughout.
-import { getPool, orgQuery } from "../db";
+import { orgQuery } from "../db";
 import { LEAD_STAGES, type LeadStage, type LeadRow, type LeadNote } from "./types";
 
 export { LEAD_STAGES };
@@ -10,7 +10,8 @@ export async function listLeads(
   orgId: string,
   opts: { stage?: LeadStage } = {}
 ): Promise<LeadRow[]> {
-  const r = await getPool().query(
+  const r = await orgQuery<LeadRow>(
+    orgId,
     `SELECT s.id, s.address_line1, s.city, s.channel, s.contact_name,
             s.pipeline_stage, s.submitted_at,
             v.grand_total, v.range_low, v.range_high
@@ -26,7 +27,8 @@ export async function listLeads(
 }
 
 export async function stageCounts(orgId: string): Promise<Record<LeadStage, number>> {
-  const r = await getPool().query(
+  const r = await orgQuery(
+    orgId,
     `SELECT pipeline_stage, count(*)::int AS n
      FROM intake_submissions
      WHERE org_id = $1 AND status = 'converted' AND deleted_at IS NULL
@@ -39,7 +41,8 @@ export async function stageCounts(orgId: string): Promise<Record<LeadStage, numb
 }
 
 export async function setStage(orgId: string, submissionId: string, stage: LeadStage): Promise<boolean> {
-  const r = await getPool().query(
+  const r = await orgQuery(
+    orgId,
     `UPDATE intake_submissions SET pipeline_stage = $3, pipeline_updated_at = now()
      WHERE id = $2 AND org_id = $1 AND deleted_at IS NULL`,
     [orgId, submissionId, stage]

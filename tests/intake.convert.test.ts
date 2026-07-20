@@ -95,10 +95,10 @@ d("US-007 auto-create", () => {
   it("is idempotent: replaying returns the same project", async () => {
     const id = await submit("idem@convert-test.example");
     const first = (
-      await getPool().query("SELECT project_id FROM intake_submissions WHERE id = $1", [id])
-    ).rows[0].project_id;
-    const replay = await convertSubmission(id);
-    expect(replay).toBe(first);
+      await getPool().query("SELECT project_id, org_id FROM intake_submissions WHERE id = $1", [id])
+    ).rows[0];
+    const replay = await convertSubmission(id, first.org_id);
+    expect(replay).toBe(first.project_id);
     const count = (
       await getPool().query(
         `SELECT count(*)::int AS n FROM projects p
@@ -115,12 +115,12 @@ d("US-007 auto-create", () => {
     });
     const sub = (
       await getPool().query(
-        "SELECT status, project_id FROM intake_submissions WHERE id = $1",
+        "SELECT status, project_id, org_id FROM intake_submissions WHERE id = $1",
         [id]
       )
     ).rows[0];
     expect(sub.status).toBe("spam");
     expect(sub.project_id).toBeNull();
-    expect(await convertSubmission(id)).toBeNull(); // even called directly
+    expect(await convertSubmission(id, sub.org_id)).toBeNull(); // even called directly
   });
 });
