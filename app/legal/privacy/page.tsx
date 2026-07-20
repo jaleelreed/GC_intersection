@@ -1,5 +1,5 @@
 // Privacy Policy — plain-language. Not legal advice.
-export const metadata = { title: "Privacy Policy — GC_intersection" };
+export const metadata = { title: "Privacy Policy — BidEasy" };
 
 export default function Privacy() {
   return (

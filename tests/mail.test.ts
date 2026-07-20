@@ -9,7 +9,7 @@ describe("proposalEmailHtml (pure)", () => {
     const html = proposalEmailHtml("Acme GC", "12 Main St", "https://x/p/tok");
     expect(html).toContain("https://x/p/tok");
     expect(html).toContain("Acme GC");
-    expect(html).toContain("GC_intersection");
+    expect(html).toContain("BidEasy");
   });
 });
 

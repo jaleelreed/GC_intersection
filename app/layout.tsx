@@ -16,7 +16,7 @@ const display = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  title: "GC_intersection — estimates that price themselves",
+  title: "BidEasy — estimates that price themselves",
   description: "Zero-setup estimating for residential-renovation GCs",
 };
 
@@ -24,11 +24,16 @@ export const metadata: Metadata = {
 // OS preference.
 const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`;
 
+// Set the saved side-nav state before paint so the sidebar renders at the right
+// width immediately (no expand→collapse flash for collapsed users).
+const navScript = `(function(){try{var n=localStorage.getItem('nav');document.documentElement.dataset.nav=(n==='collapsed'?'collapsed':'expanded')}catch(e){}})()`;
+
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className={`${body.variable} ${display.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: navScript }} />
       </head>
       <body>{children}</body>
     </html>

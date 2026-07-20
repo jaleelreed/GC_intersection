@@ -1,6 +1,6 @@
 // Terms of Service — plain-language, honest. Not legal advice; a real launch
 // should have counsel review, but shipping *something* beats a dead link.
-export const metadata = { title: "Terms of Service — GC_intersection" };
+export const metadata = { title: "Terms of Service — BidEasy" };
 
 export default function Terms() {
   return (
@@ -11,7 +11,7 @@ export default function Terms() {
 
       <h2 className="mt-8 font-display text-xl font-bold text-ink">What this service does</h2>
       <p className="mt-2 leading-relaxed text-muted">
-        GC_intersection helps general contractors produce draft estimates and send bids.
+        BidEasy helps general contractors produce draft estimates and send bids.
         Estimates are <strong className="text-ink">drafts and projections</strong>, seeded from market data and
         refined by you. They are not guarantees of final cost.
       </p>
