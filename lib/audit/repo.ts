@@ -34,7 +34,8 @@ export interface ActivityRow {
 }
 
 export async function recentActivity(orgId: string, limit = 20): Promise<ActivityRow[]> {
-  const r = await getPool().query(
+  const r = await orgQuery<ActivityRow>(
+    orgId,
     `SELECT action, table_name, occurred_at FROM audit_log
      WHERE org_id = $1 ORDER BY occurred_at DESC LIMIT $2`,
     [orgId, limit]
@@ -51,7 +52,6 @@ export interface Funnel {
 
 /** Activation funnel for the org, from audit + proposal state. */
 export async function funnel(orgId: string): Promise<Funnel> {
-  const pool = getPool();
   const leads = Number(
     (await orgQuery(
       orgId,
@@ -60,7 +60,8 @@ export async function funnel(orgId: string): Promise<Funnel> {
     )).rows[0].n
   );
   const p = (
-    await pool.query(
+    await orgQuery(
+      orgId,
       `SELECT count(*) FILTER (WHERE status IN ('sent','viewed','accepted','declined'))::int AS quoted,
               count(*) FILTER (WHERE status = 'accepted')::int AS accepted,
               count(*) FILTER (WHERE status = 'declined')::int AS declined
