@@ -68,7 +68,8 @@ export interface MarkupTemplate {
 }
 
 export async function listMarkupTemplates(orgId: string): Promise<MarkupTemplate[]> {
-  const r = await getPool().query(
+  const r = await orgQuery<MarkupTemplate>(
+    orgId,
     `SELECT id, apply_order, name, rate_pct FROM markup_templates
      WHERE org_id = $1 AND is_active AND deleted_at IS NULL ORDER BY apply_order`,
     [orgId]
@@ -77,7 +78,8 @@ export async function listMarkupTemplates(orgId: string): Promise<MarkupTemplate
 }
 
 export async function setMarkupRate(orgId: string, id: string, ratePct: string): Promise<boolean> {
-  const r = await getPool().query(
+  const r = await orgQuery(
+    orgId,
     `UPDATE markup_templates SET rate_pct = $3 WHERE id = $2 AND org_id = $1 AND deleted_at IS NULL`,
     [orgId, id, ratePct]
   );

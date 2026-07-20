@@ -32,11 +32,25 @@ async function readTemplateCostItems(fromOrg: string): Promise<Record<string, un
   );
 }
 
+// markup_templates is FORCE-RLS'd too — same prefetch-under-template pattern.
+async function readTemplateMarkups(fromOrg: string): Promise<Record<string, unknown>[]> {
+  return withOrg(fromOrg, async (c) =>
+    (
+      await c.query(
+        `SELECT apply_order, name, markup_kind, rate_pct, fixed_amount, is_active
+         FROM markup_templates WHERE org_id = $1 AND deleted_at IS NULL`,
+        [fromOrg]
+      )
+    ).rows
+  );
+}
+
 async function cloneEstimatingConfig(
   client: PoolClient,
   fromOrg: string,
   toOrg: string,
-  catalog: Record<string, unknown>[]
+  catalog: Record<string, unknown>[],
+  markups: Record<string, unknown>[]
 ): Promise<void> {
   // cost_items catalog (manual rows only — never harvested/learned costs),
   // prefetched from the template under its own org context.
@@ -113,12 +127,15 @@ async function cloneEstimatingConfig(
      FROM assembly_modifiers WHERE org_id = $1 AND assembly_id IS NULL AND deleted_at IS NULL`,
     [fromOrg, toOrg]
   );
-  await client.query(
-    `INSERT INTO markup_templates (org_id, apply_order, name, markup_kind, rate_pct, fixed_amount, is_active)
-     SELECT $2, apply_order, name, markup_kind, rate_pct, fixed_amount, is_active
-     FROM markup_templates WHERE org_id = $1 AND deleted_at IS NULL`,
-    [fromOrg, toOrg]
-  );
+  // markup_templates is FORCE-RLS'd — insert the prefetched template rows under
+  // the new org's context (a cross-org INSERT...SELECT can't span both).
+  for (const m of markups as Array<Record<string, unknown>>) {
+    await client.query(
+      `INSERT INTO markup_templates (org_id, apply_order, name, markup_kind, rate_pct, fixed_amount, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+      [toOrg, m.apply_order, m.name, m.markup_kind, m.rate_pct, m.fixed_amount, m.is_active]
+    );
+  }
 }
 
 /**
@@ -186,8 +203,9 @@ export async function ensureWorkspace(email: string, name: string | null): Promi
     // Read the FORCE-RLS'd cost_items catalog under the template's context,
     // then write the new org's config under the new org's context.
     const templateCatalog = await readTemplateCostItems(TEMPLATE_ORG_ID);
+    const templateMarkups = await readTemplateMarkups(TEMPLATE_ORG_ID);
     await setOrg(client, orgId);
-    await cloneEstimatingConfig(client, TEMPLATE_ORG_ID, orgId, templateCatalog);
+    await cloneEstimatingConfig(client, TEMPLATE_ORG_ID, orgId, templateCatalog, templateMarkups);
 
     await client.query("COMMIT");
     return { userId, orgId, orgName, role: "owner_admin" };
