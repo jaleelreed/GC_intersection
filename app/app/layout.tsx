@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { currentUserEmail } from "../../lib/auth/server";
 import { resolveWorkspace } from "../../lib/workspace";
 import { ensureWorkspace } from "../../lib/onboarding/provision";
-import { AppNav } from "../../components/app/AppNav";
+import { AppShell } from "../../components/app/AppShell";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +16,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const ws = (await resolveWorkspace(user.email)) ?? (await ensureWorkspace(user.email, user.name));
 
   return (
-    <div className="min-h-dvh bg-bg text-ink">
-      <AppNav orgName={ws.orgName} email={user.email} />
+    <AppShell orgName={ws.orgName} email={user.email}>
       {children}
-    </div>
+    </AppShell>
   );
 }

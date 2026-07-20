@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ThemeToggle } from "../components/ui/ThemeToggle";
 
 export const metadata = {
-  title: "GC_intersection — estimates that price themselves",
+  title: "BidEasy — estimates that price themselves",
   description:
     "Zero-setup estimating for residential-renovation GCs. A homeowner fills your form; a priced draft lands in your inbox. Your edits teach it your pricing.",
 };
@@ -27,8 +27,8 @@ export default function Landing() {
     <div className="min-h-dvh bg-bg text-ink">
       <header className="mx-auto flex max-w-5xl items-center justify-between px-5 py-5">
         <span className="flex items-center gap-2 font-display text-lg font-bold">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-accent text-accent-foreground text-sm">G</span>
-          GC_intersection
+          <span className="grid h-7 w-7 place-items-center rounded-lg bg-accent text-accent-foreground text-sm">B</span>
+          BidEasy
         </span>
         <div className="flex items-center gap-2">
           <ThemeToggle />
@@ -99,7 +99,7 @@ export default function Landing() {
         <Link href="/auth/sign-in" className="hover:text-ink">Sign in</Link>
         <Link href="/legal/terms" className="hover:text-ink">Terms</Link>
         <Link href="/legal/privacy" className="hover:text-ink">Privacy</Link>
-        <span className="ml-auto text-faint">© GC_intersection</span>
+        <span className="ml-auto text-faint">© BidEasy</span>
       </footer>
     </div>
   );

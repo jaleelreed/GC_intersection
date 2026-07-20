@@ -92,7 +92,7 @@ export default async function BuyerProposalPage({ params }: { params: Promise<{ 
         </p>
 
         <footer className="mt-6 border-t border-line pt-4 text-xs text-faint">
-          Prepared with GC_intersection · gc-intersection.vercel.app
+          Prepared with BidEasy · gc-intersection.vercel.app
         </footer>
       </div>
     </main>

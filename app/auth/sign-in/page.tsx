@@ -61,8 +61,8 @@ export default function SignInPage() {
       </div>
       <div className="ui-rise w-full max-w-sm">
         <Link href="/" className="mb-8 flex items-center justify-center gap-2 font-display text-lg font-bold">
-          <span className="grid h-7 w-7 place-items-center rounded-lg bg-accent text-accent-foreground text-sm">G</span>
-          GC_intersection
+          <span className="grid h-7 w-7 place-items-center rounded-lg bg-accent text-accent-foreground text-sm">B</span>
+          BidEasy
         </Link>
 
         <div className="ui-card p-7">

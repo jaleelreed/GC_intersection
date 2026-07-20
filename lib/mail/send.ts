@@ -79,6 +79,6 @@ export function proposalEmailHtml(orgName: string, projectName: string, buyerUrl
   return [
     `<p>${orgName} has prepared an estimate for ${projectName}.</p>`,
     `<p><a href="${buyerUrl}">View your estimate</a></p>`,
-    `<p style="color:#64748b;font-size:12px">Prepared with GC_intersection</p>`,
+    `<p style="color:#64748b;font-size:12px">Prepared with BidEasy</p>`,
   ].join("");
 }
