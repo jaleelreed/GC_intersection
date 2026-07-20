@@ -1,6 +1,6 @@
 // Data access for the intake front door (US-005). All SQL for the story lives
 // here so route handlers stay thin and tests can exercise the real queries.
-import { getPool } from "../db";
+import { getPool, orgQuery } from "../db";
 import type { IntakeSubmissionInput } from "./schema";
 
 export interface IntakeLink {
@@ -39,7 +39,8 @@ export async function insertSubmission(
   status: "submitted" | "spam",
   derived: { county_fips?: string | null; enrichment_snapshot_id?: string | null } = {}
 ): Promise<{ id: string }> {
-  const r = await getPool().query(
+  const r = await orgQuery(
+    link.org_id,
     `INSERT INTO intake_submissions (
        org_id, intake_link_id, channel, status,
        contact_name, contact_email, contact_phone,

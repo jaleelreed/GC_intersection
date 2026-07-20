@@ -2,7 +2,7 @@
 // (website embed, truck QR, per-campaign links); each carries channel
 // attribution so they learn which door produces leads (D5).
 import { randomBytes } from "node:crypto";
-import { getPool } from "../db";
+import { getPool, orgQuery } from "../db";
 
 export type Channel = "embed" | "link" | "qr";
 export const CHANNELS: Channel[] = ["link", "qr", "embed"];
@@ -17,7 +17,8 @@ export interface LinkRow {
 }
 
 export async function listLinks(orgId: string): Promise<LinkRow[]> {
-  const r = await getPool().query(
+  const r = await orgQuery<LinkRow>(
+    orgId,
     `SELECT il.id, il.slug, il.channel, il.label, il.is_active,
             count(s.id) FILTER (WHERE s.status = 'converted')::int AS lead_count
      FROM intake_links il
@@ -60,7 +61,8 @@ export interface ChannelStat {
 }
 
 export async function channelStats(orgId: string): Promise<ChannelStat[]> {
-  const r = await getPool().query(
+  const r = await orgQuery(
+    orgId,
     `SELECT channel,
             count(*) FILTER (WHERE status = 'converted')::int AS leads,
             count(*) FILTER (WHERE status = 'converted' AND pipeline_stage = 'won')::int AS won

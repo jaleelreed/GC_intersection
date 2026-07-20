@@ -2,7 +2,7 @@
 import { currentUserEmail } from "../../../../../lib/auth/server";
 import { resolveWorkspace } from "../../../../../lib/workspace";
 import { addNote } from "../../../../../lib/leads/repo";
-import { getPool } from "../../../../../lib/db";
+import { orgQuery } from "../../../../../lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,7 +16,8 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
 
   // ownership: the lead must belong to the caller's org
   const owned = (
-    await getPool().query(
+    await orgQuery(
+      ws.orgId,
       `SELECT id FROM intake_submissions WHERE id = $1 AND org_id = $2 AND deleted_at IS NULL`,
       [id, ws.orgId]
     )

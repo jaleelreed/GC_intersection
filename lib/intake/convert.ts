@@ -52,10 +52,13 @@ async function nextProjectCode(client: PoolClient, orgId: string, year: number):
  * when the submission is missing / spam / discarded. Re-running on an
  * already-converted submission returns the existing project id.
  */
-export async function convertSubmission(submissionId: string): Promise<string | null> {
+export async function convertSubmission(submissionId: string, orgId: string): Promise<string | null> {
   const client = await getPool().connect();
   try {
     await client.query("BEGIN");
+    // intake_submissions is FORCE-RLS'd; scope before reading the row (the org
+    // is known from the intake link the submission came in on).
+    await setOrg(client, orgId);
 
     const sub = (
       await client.query(

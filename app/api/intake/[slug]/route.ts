@@ -92,7 +92,7 @@ export async function POST(
   // gets success; the lead is never lost.
   if (status === "submitted") {
     try {
-      await convertSubmission(id);
+      await convertSubmission(id, link.org_id);
     } catch (err) {
       await captureError(err, { where: "intake.convert", submission_id: id });
     }

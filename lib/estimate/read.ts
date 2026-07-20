@@ -85,7 +85,8 @@ export async function listVersions(estimateId: string, orgId: string): Promise<V
  */
 export async function coverageGaps(submissionId: string, orgId: string): Promise<string[]> {
   const head = (
-    await getPool().query(
+    await orgQuery(
+      orgId,
       `SELECT s.scope_toggles, e.current_version_id
        FROM intake_submissions s
        LEFT JOIN estimates e ON e.id = s.estimate_id
@@ -120,7 +121,8 @@ export async function currentEstimateForLead(
   orgId: string
 ): Promise<EditorEstimate | null> {
   const head = (
-    await getPool().query(
+    await orgQuery(
+      orgId,
       `SELECT s.id AS submission_id, s.address_line1, e.id AS estimate_id,
               v.id AS version_id, v.version_no, v.locked_at, v.base_total,
               v.grand_total, v.range_low, v.range_high

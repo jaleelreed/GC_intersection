@@ -2,7 +2,7 @@
 // converted, bid sent/accepted/declined, estimate edited). Best-effort — a
 // logging failure must never break the business action.
 import type { PoolClient } from "pg";
-import { getPool } from "../db";
+import { getPool, orgQuery } from "../db";
 
 export interface AuditEvent {
   orgId: string;
@@ -53,7 +53,8 @@ export interface Funnel {
 export async function funnel(orgId: string): Promise<Funnel> {
   const pool = getPool();
   const leads = Number(
-    (await pool.query(
+    (await orgQuery(
+      orgId,
       `SELECT count(*)::int AS n FROM intake_submissions WHERE org_id = $1 AND status = 'converted' AND deleted_at IS NULL`,
       [orgId]
     )).rows[0].n

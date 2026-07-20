@@ -369,6 +369,9 @@ export async function declineProposal(
       return { declined: true };
     }
     assertTransition(t.status, "declined");
+    // intake_submissions (pipeline update) + notifications below are FORCE-RLS'd
+    // — resolve the org from the token, then scope the rest of the transaction.
+    await setOrg(client, t.org_id);
 
     await client.query(`UPDATE proposals SET status = 'declined' WHERE id = $1`, [t.proposal_id]);
     await client.query(
