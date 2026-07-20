@@ -10,6 +10,12 @@ const EXPECTED = [
   "POSTGRES_URL",
   "NEON_AUTH_BASE_URL",
   "NEON_AUTH_COOKIE_SECRET",
+  // Operator activations — presence lets us verify the secret-store config
+  // landed without ever exposing the values.
+  "MAIL_PROVIDER",
+  "RESEND_API_KEY",
+  "MAIL_FROM",
+  "ENRICHMENT_PROVIDER",
 ] as const;
 
 export async function GET() {
