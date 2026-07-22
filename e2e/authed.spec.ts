@@ -208,6 +208,8 @@ test("buyer can ask a question, then decline (both under RLS)", async ({ page, c
   await buyer.getByRole("textbox", { name: "Your question" }).fill("Does this include permits?");
   await buyer.getByRole("button", { name: "Send question" }).click();
   await expect(buyer.getByText("the contractor will get back to you")).toBeVisible({ timeout: 15_000 });
+  // Reload to return to the action buttons (the question view is terminal in-UI).
+  await buyer.goto(buyerUrl);
   // Decline (terminal): resolves org → proposals + proposal_events + moves lead to lost.
   await buyer.getByRole("button", { name: "Decline" }).click();
   await buyer.getByRole("button", { name: "Decline this bid" }).click();
