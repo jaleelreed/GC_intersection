@@ -149,3 +149,69 @@ test("mobile: hamburger opens the nav drawer; selecting an item closes it", asyn
   await expect(drawer).toHaveAttribute("aria-hidden", "true"); // …and closes it
   await context.close();
 });
+
+// Seeds a fresh priced lead as the fixture GC and returns a buyer bid link.
+// Mirrors the accept journey's setup so the decline/question paths can be
+// exercised under the RLS-enforced role in CI.
+async function seedBidLink(page: import("@playwright/test").Page, request: import("@playwright/test").APIRequestContext): Promise<string> {
+  const email = `authed-${Date.now()}@intake-test.example`;
+  const submit = await request.post("/api/intake/fixture-link", {
+    data: {
+      contact_name: "Buyer Path E2E",
+      contact_email: email,
+      address_line1: "8 Buyer Path Ave",
+      city: "Washington",
+      state: "DC",
+      postal_code: "20001",
+      square_footage: 1500,
+      conditions: { year_built: 1940, occupied: false, access: "easy", known_problems: [] },
+      scope_toggles: {
+        bath: { on: true, class: "in_place" }, kitchen: { on: false, class: null },
+        floors: { on: false, class: null }, walls: { on: false, class: null },
+        utilities: { on: false, class: null }, plumbing: { on: false, class: null },
+        electric: { on: false, class: null }, mechanical: { on: false, class: null },
+        roof: { on: false, class: null }, basement: { on: false, class: null },
+      },
+      structural_flags: {}, finish_tier: "mid", narrative: "",
+      form_started_at: Date.now() - 60000,
+    },
+  });
+  expect(submit.status()).toBe(201);
+  const { id } = await submit.json();
+  await page.goto(`/app/lead/${id}`);
+  await expect(page.getByText("Why this range")).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "Create bid link" }).click();
+  const linkInput = page.getByTestId("bid-link");
+  await expect(linkInput).toBeVisible({ timeout: 15_000 });
+  return linkInput.inputValue();
+}
+
+test("buyer can ask a question, then decline (both under RLS)", async ({ page, context, request }) => {
+  await context.addCookies([
+    { name: "e2e_auth", value: SECRET!, domain: "localhost", path: "/" },
+    { name: "e2e_email", value: FIXTURE_GC_EMAIL, domain: "localhost", path: "/" },
+  ]);
+  await page.addInitScript(() => {
+    try {
+      localStorage.setItem("bideasy_onboarding", "seen");
+    } catch {
+      /* ignore */
+    }
+  });
+
+  const buyerUrl = await seedBidLink(page, request);
+
+  const buyer = await context.newPage();
+  await buyer.goto(buyerUrl);
+  // Question (non-terminal): resolves org from token → proposal_events + notify.
+  await buyer.getByRole("button", { name: "Ask a question" }).click();
+  await buyer.getByRole("textbox", { name: "Your question" }).fill("Does this include permits?");
+  await buyer.getByRole("button", { name: "Send question" }).click();
+  await expect(buyer.getByText("the contractor will get back to you")).toBeVisible({ timeout: 15_000 });
+  // Reload to return to the action buttons (the question view is terminal in-UI).
+  await buyer.goto(buyerUrl);
+  // Decline (terminal): resolves org → proposals + proposal_events + moves lead to lost.
+  await buyer.getByRole("button", { name: "Decline" }).click();
+  await buyer.getByRole("button", { name: "Decline this bid" }).click();
+  await expect(buyer.getByText("This bid was declined")).toBeVisible({ timeout: 15_000 });
+});
